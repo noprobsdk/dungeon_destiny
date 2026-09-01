@@ -1,0 +1,100 @@
+name: Feature
+description: Plan one bounded, testable product capability.
+title: "[FEAT-00000] "
+labels:
+  - feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A Feature selects a bounded part of the accepted design for implementation. It must not silently redefine the design.
+
+  - type: input
+    id: feature_id
+    attributes:
+      label: Feature ID
+      description: Stable identifier assigned to this Feature.
+      placeholder: FEAT-00001
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Intended outcome
+      description: Describe the user, content-author, or production capability delivered by this Feature.
+    validations:
+      required: true
+
+  - type: textarea
+    id: design_sources
+    attributes:
+      label: Design sources
+      description: Link the relevant canonical documents and record the design baseline commit.
+      placeholder: |
+        - doc/path/file.md — relevant section
+        - Design baseline commit: SHA
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current state
+      description: State what exists before this Feature, including verified gaps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Included scope
+      description: List exactly what this Feature will change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Excluded scope
+      description: List nearby work deliberately excluded from this Feature.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: targets
+    attributes:
+      label: Affected targets
+      options:
+        - label: Documentation
+        - label: Database or migrations
+        - label: Content Studio
+        - label: Runtime manifest or content exchange
+        - label: Godot App
+        - label: 3D production or runtime assets
+        - label: Tests or validation tooling
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Provide observable, testable criteria. Code existence alone is not acceptance.
+      placeholder: |
+        1. Given ..., when ..., then ...
+        2. Evidence: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and risks
+      description: Identify blocking decisions, external assets, migrations, compatibility risks, and dependencies.
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Explain how the deployed result will be verified and what evidence will be retained.
+    validations:
+      required: true
