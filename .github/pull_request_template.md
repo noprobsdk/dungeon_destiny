@@ -1,7 +1,7 @@
-## Feature
+## Feature Request
 
-- Feature ID:
-- GitHub issue:
+- Feature Request: [<number>](delivery/<number>-feature-request-<name>/README.md)
+- GitHub Issue:
 - Design baseline commit:
 
 ## Outcome
@@ -32,7 +32,8 @@ Evidence:
 
 - [ ] Canonical design remains accurate.
 - [ ] Implementation notes do not redefine approved design.
-- [ ] Delivery documentation is updated only if this pull request is part of a deployed and verified release; otherwise this is not applicable.
+- [ ] The Feature Request `CHANGELOG.md` records this change.
+- [ ] As-built documentation is published separately through `delivery/create-as-built.md` after the Feature Request is accepted; it is not part of this pull request unless that workflow applies.
 
 ## Risks and rollback
 

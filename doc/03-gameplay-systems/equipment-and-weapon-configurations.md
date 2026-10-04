@@ -59,6 +59,28 @@ The active Weapon Configuration derives:
 | Bow | Reserved | `bow` | `support_weapon` |
 | Two-handed melee weapon | Reserved | `two_hand_melee` | `support_weapon` |
 
+## Equipment ownership and Hero assignment
+
+Ordinary Equipment belongs to the player's Account Layer and is stored in a Shared Inventory. A Hero does not own a separate copy of an Equipment item. Instead, the Hero's Equipment Configuration references Equipment instances from the Shared Inventory.
+
+One Equipment instance may be assigned to no more than one Hero at a time.
+
+A compatible Hero may equip an available item when all applicable requirements are satisfied, including:
+
+- required Hero Level;
+- permitted Equipment Slot;
+- weapon, armor, or shield proficiency;
+- Base Body and Rig Profile compatibility where required by the visual asset;
+- any explicit gameplay restriction defined by the item.
+
+Equipment has fixed statistics, Item Level, and requirements. Its statistics do not automatically scale to the Hero using it. Rarity expresses quality within an Item Level: an Epic Level 1 item is not equivalent in power to an Epic Level 10 item.
+
+If an item is already assigned to another Hero, the UI must identify that Hero. Moving the item requires an explicit **Transfer and Unequip** operation. The authoritative service must atomically remove the previous assignment before assigning the same Equipment instance to the new Hero.
+
+Hero-bound Equipment is an explicit exception reserved for special Journey or story requirements. Ordinary Equipment is Account-bound by default.
+
+Account-bound does not imply player-to-player trading. Trading between different Accounts requires a separately approved gameplay system.
+
 ## Character Mode and animation resolution
 
 The active Weapon Configuration supplies Weapon Type and Off-hand Type to the animation system.

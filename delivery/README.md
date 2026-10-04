@@ -1,31 +1,67 @@
-# Delivery documentation
+# Delivery
 
-`delivery/` describes only functionality that has been deployed and verified.
+`delivery/` records the delivery of the design in `doc/`, Feature Request by Feature Request.
 
-It answers:
+`doc/` states what the game is meant to be. It is not evidence that anything has been built.
+A Feature Request is kept here from the start of specification and records what is to be built,
+how it was built, and how it was verified. `_as-built/` documents only what has been implemented
+and verified.
 
-> What demonstrably exists in a released Dungeon Destiny build?
+Every change under `delivery/` follows the workflow in
+[Documentation and delivery change management](../doc/document-change-management.md).
 
-It does not contain brainstorming, planned design, active development, or functionality that exists only in a pull request.
+## Feature Requests
 
-## Entry conditions
+Each Feature Request has one folder, named `<number>-feature-request-<name>`:
 
-Functionality may be added here only when:
+```text
+delivery/
+├── README.md
+├── <number>-feature-request-<name>/
+└── _as-built/
+```
 
-1. its GitHub Feature has approved acceptance criteria;
-2. implementation and required tests are complete;
-3. the result has been deployed;
-4. the deployed result has been verified;
-5. the released build and evidence can be identified.
+The number is four digits, assigned in order, and never reused. It is this repository's own
+numbering. It does not correspond to an identifier in any other system.
 
-## Structure
+A Feature Request folder contains a `README.md` and `CHANGELOG.md`. It may contain more where the work
+needs it, such as a test plan or `implementation_report.md`. The README follows
+[Feature Request how-to](../doc/howto-feature-request.md).
 
-The numbered system folders will mirror the relevant parts of `doc/`, but only where released behaviour exists. Released Feature records live under [`00-features/`](00-features/).
+`_as-built/` documents the implemented and verified game and services. Each page is sourced from
+its originating Feature Request, not copied from `doc/`. The directory is created when the first
+Feature Request is published to it.
 
-Each delivery system file must state:
+## Feature Request workflow
 
-- delivery status;
-- last verified release;
-- implementing Feature IDs;
-- verification evidence;
-- applicable limitations.
+An approved design under `doc/` is the authoritative source for a Feature Request. GitHub Issues
+may track the work and may be referenced for traceability, but they are never the Feature Request
+source. When specification starts, create the Feature Request folder and its `README.md` and
+`CHANGELOG.md`.
+
+```text
+New
+→ In Specification
+→ Backlog
+→ In Progress
+→ In Review
+→ Pending documentation
+→ Complete
+```
+
+| Feature Request status | Meaning |
+|---|---|
+| `In Specification` | The design, scope, acceptance criteria, Feature Request document, and sprint assignment are being prepared. |
+| `Backlog` | The Feature Request is specified and approved but not currently scheduled for implementation. |
+| `In Progress` | Implementation is active. |
+| `In Review` | The implementation is being checked against its specification and acceptance criteria. |
+| `Pending documentation` | Implementation is complete and accepted; supporting and as-built documentation is being finalized. |
+| `Complete` | Implementation, verification, and documentation are complete. |
+
+## Feature Request list
+
+| Feature Request | Status | Created |
+|---|---|---|
+
+A Feature Request README uses one of the Feature Request statuses defined above. The Feature Request list
+is updated whenever a Feature Request folder is added or its status changes.
