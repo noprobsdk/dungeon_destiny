@@ -14,6 +14,12 @@
 | Dungeon Level (DL) | One finite, sequential dungeon configured in Content Studio. |
 | Stage | An ordered encounter or progression section inside a Dungeon Level. |
 | Hero Level (HL) | Permanent character level based on Hero XP. |
+| Account Layer | The player's account-level layer above individual Heroes; it owns ordinary Equipment. |
+| Account Inventory | Account Layer storage of Equipment instances; a Hero's Equipment Configuration references instances from it instead of owning copies, and each instance occupies at most one Equipment Slot of one Hero. |
+| Item Level | An Equipment item's fixed level; its statistics do not scale to the Hero using it, and Rarity expresses quality within an Item Level. |
+| Account-bound | Default binding of ordinary Equipment to the Account Layer; it does not imply player-to-player trading. |
+| Hero-bound | Exception binding of Equipment to one Hero, reserved for special Journey or story requirements. |
+| Transfer and Unequip | Explicit operation that moves an Equipment instance assigned to one Hero to another; the authoritative service atomically removes the previous assignment before making the new one. |
 | Tactical Pause (TP) | Player-triggered temporary time-stop used for tactical actions and assessment. |
 | Trait | Temporary run-only modifier selected after eligible Stages. |
 | Active Trait Pool | Runtime collection of eligible Trait tiers during the current attempt. |

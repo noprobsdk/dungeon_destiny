@@ -61,9 +61,9 @@ The active Weapon Configuration derives:
 
 ## Equipment ownership and Hero assignment
 
-Ordinary Equipment belongs to the player's Account Layer and is stored in a Shared Inventory. A Hero does not own a separate copy of an Equipment item. Instead, the Hero's Equipment Configuration references Equipment instances from the Shared Inventory.
+Ordinary Equipment belongs to the player's Account Layer and is stored in an Account Inventory. A Hero does not own a separate copy of an Equipment item. Instead, the Hero's Equipment Configuration references Equipment instances from the Account Inventory.
 
-One Equipment instance may be assigned to no more than one Hero at a time.
+One Equipment instance can never be used twice. At any time it is either unassigned or occupies exactly one Equipment Slot in one Hero's Equipment Configuration. The same instance cannot appear in both the Primary and Secondary Weapon Configuration.
 
 A compatible Hero may equip an available item when all applicable requirements are satisfied, including:
 

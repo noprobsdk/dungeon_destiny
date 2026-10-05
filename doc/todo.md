@@ -15,10 +15,10 @@ and architecture decisions are owned by [`12-decisions/`](12-decisions/README.md
 | Item | Status | Note |
 |---|---|---|
 | Documentation and delivery change management | done | Completed 2026-10-04. `document-change-management.md` replaced with the version from `ou-oci-terraform-main`; `.gitignore` ignores `*.proposed.md` and `*.full.diff`; `README.md`, `doc/README.md`, and `delivery/README.md` no longer describe `delivery/` as released behaviour only. |
-| Equipment ownership and Hero assignment | in progress | 2026-10-04: The section in `03-gameplay-systems/equipment-and-weapon-configurations.md`, created outside the approval workflow, is kept as written. Follow-up governed changes: add Account Layer, Shared Inventory, Item Level, Account-bound, Hero-bound, and Transfer and Unequip to `glossary.md`; record the design decision in `12-decisions/decision-log.md`; and define inventory ownership in the data model, which `07-data-model/character-model/equipment-and-hand-slots.md` currently leaves out of scope. |
+| Equipment ownership and Hero assignment | done | Completed 2026-10-05. Section in `03-gameplay-systems/equipment-and-weapon-configurations.md` kept and amended (Account Inventory; an instance can never be used twice). Glossary terms added, DD-007 recorded, `07-data-model/player-state/account-inventory.md` created, and `equipment-and-hand-slots.md` given Item Level, binding, and `equipment_usage_rules`. |
 | Agent instructions | done | Completed 2026-10-04. Root `AGENTS.md` adapted from `ou-oci-terraform-main` directs agents to read `doc/` context, follow `document-change-management.md`, and use fast execution. Its WSL section was omitted as Terraform-specific. |
 | Workflow guides | done | Completed 2026-10-04. `grill-me.md` copied unchanged from `ou-oci-terraform-main`; `test-driven-development.md` and `howto.md` adapted with OCI, Terraform, and Asana terms replaced by Dungeon Destiny targets and GitHub Issues. The Asana menu entry was omitted. |
-| Document structure | planned | `document-structure.md` omits `todo.md`, `document-change-management.md`, `03-gameplay-systems/parties-and-quest-sessions.md`, and `08-technical/service-architecture.md`. |
+| Document structure | planned | `document-structure.md` omits `todo.md`, `document-change-management.md`, `howto.md`, `howto-feature-request.md`, `grill-me.md`, `test-driven-development.md`, `03-gameplay-systems/parties-and-quest-sessions.md`, `07-data-model/player-state/account-inventory.md`, and `08-technical/service-architecture.md`. |
 | In-repository Feature Request adoption | done | Completed 2026-10-04. `howto-feature-request.md`, `delivery/create-as-built.md`, and `delivery/recap.md` adapted from `ou-oci-terraform-main` with GitHub Issues in place of Asana; `delivery/README.md` rewritten to the Feature Request model; `delivery/00-features/` removed; `README.md`, `doc/README.md`, and the `.github` Feature Request issue and pull-request templates aligned. |
 
 ## Open decisions
@@ -28,9 +28,14 @@ A decided decision moves to the list below.
 
 | Decision | Blocks | Status | Discussed |
 |---|---|---|---|
+| Existing Equipment assignment when a content release changes usage rules so the assigned Hero no longer meets them | Account Inventory implementation | open | 2026-10-05: recorded as unresolved in `07-data-model/player-state/account-inventory.md`. |
 
 ## Decided
 
+- 2026-10-05: Ordinary Equipment is held in an Account Inventory, renamed from Shared Inventory. One
+  Equipment instance can never be used twice: one assignment per instance records one Hero, one
+  Weapon Configuration, and one Equipment Slot. Usage rules are kept per item in
+  `equipment_usage_rules`. Item Level, Rarity, and statistics are fixed on the Equipment definition.
 - 2026-10-04: Feature Requests are kept in this repository under
   `delivery/<number>-feature-request-<name>/`, each with `README.md` and `CHANGELOG.md` from the
   start of specification. GitHub Issues are used for tracking only and are never the Feature

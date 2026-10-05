@@ -18,6 +18,10 @@ Content Studio provides the authoring UI for these records. Technical Architectu
 - [Body Archetype, Base Body, and Rig Profile data model](character-model/body-archetypes-base-bodies-and-rig-profiles.md)
 - [Equipment and hand-slot data model](character-model/equipment-and-hand-slots.md)
 
+## Player state
+
+- [Account Inventory data model](player-state/account-inventory.md)
+
 ## Asset records
 
 - [Asset registries](assets/asset-registries.md)

@@ -18,7 +18,8 @@ The hand-equipment model uses:
 - `equipment_slots`;
 - `equipment_allowed_slots`;
 - `weapon_types`;
-- `off_hand_types`.
+- `off_hand_types`;
+- `equipment_usage_rules`.
 
 ## Character composition relationship
 
@@ -70,6 +71,9 @@ weapon_types.id
 
 equipment.id
     ← equipment_allowed_slots.equipment_id
+
+equipment.id
+    ← equipment_usage_rules.equipment_id
 
 equipment_slots.id
     ← equipment_allowed_slots.slot_id
@@ -164,6 +168,8 @@ A Shortsword remains one record even if it can be equipped in either hand.
 | `display_name` | Text | Yes | Human-readable item name. |
 | `asset_id` | Text | No during production | Logical reference to the visual asset in `game_assets`. |
 | `weapon_type_id` | Text, foreign key | No | References `weapon_types.id` when the item acts as a weapon. |
+| `item_level` | Integer | Yes | Fixed Item Level of the item. |
+| `binding` | Text | Yes | `account` for ordinary Account-bound Equipment or `hero` for Hero-bound Equipment. |
 | `is_active` | Integer/boolean | Yes | Availability for new configurations. |
 | `status` | Text | Yes | Current item status. |
 | `notes` | Text | Yes | Gameplay and production notes. |
@@ -180,6 +186,41 @@ The existing `slot` and `visual_slot` fields are legacy compatibility fields. Ne
 - `asset_id` does not determine the attachment socket.
 - Equipment does not own Character Mode or Animation Set references.
 - `is_active` does not mean tested or approved.
+- Item Level, Rarity, and statistics are fixed on the Equipment definition. They do not scale to the Hero using the item, and every instance of the item is identical.
+- Rarity expresses quality within an Item Level.
+- `binding` defaults to `account`. `hero` is reserved for special Journey or story requirements.
+- Ownership of Equipment instances and their assignment to Heroes are defined in the [Account Inventory data model](../player-state/account-inventory.md).
+
+## `equipment_usage_rules`
+
+### Responsibility
+
+`equipment_usage_rules` defines the rules a Hero must meet to equip an Equipment item.
+
+An item contains its own usage rules. They are not derived from Item Level.
+
+### Fields
+
+| Field | Type | Required | Responsibility |
+|---|---|---:|---|
+| `equipment_id` | Text, foreign key | Yes | References `equipment.id`. |
+| `rule_type` | Text | Yes | Kind of rule, such as `required_hero_level` or `proficiency`. |
+| `rule_value` | Text | Yes | Value the Hero must meet, such as a minimum Hero Level or a proficiency identifier. |
+| `notes` | Text | Yes | Design notes for the rule. |
+
+The composite primary key is:
+
+```text
+(equipment_id, rule_type, rule_value)
+```
+
+### Rules
+
+- A Hero may equip an item only when the Hero meets every usage rule of that item.
+- `required_hero_level` sets the minimum Hero Level. A Hero below it cannot equip the item.
+- An item without usage rules has no requirements beyond slot and compatibility validation.
+- Adding a rule type does not require a schema change, but the authoritative service must know how to evaluate it before the rule is published.
+- Usage rules do not replace Equipment Slot, Rig Profile, or other compatibility validation.
 
 ## `equipment_slots`
 
@@ -285,7 +326,6 @@ This model does not define:
 
 - Content Studio screen layout;
 - saved Hero or Enemy loadouts;
-- inventory ownership;
 - item acquisition or progression;
 - additional armor and clothing slots;
 - Animation Set clip contents;
