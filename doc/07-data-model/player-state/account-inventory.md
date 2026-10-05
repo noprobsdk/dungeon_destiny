@@ -113,9 +113,11 @@ If any step fails, the previous assignment remains unchanged.
 
 The UI identifies the currently assigned Hero from `hero_id` before the operation is confirmed.
 
-## Unresolved
+## Usage-rule changes
 
-- What happens to an existing assignment when a published content release changes an Equipment item's usage rules so that the assigned Hero no longer meets them.
+When a published content release changes an Equipment item's usage rules so that an assigned Hero no longer meets them, the existing assignment stays on that Hero.
+
+Usage rules are checked only when an assignment is created, including by Transfer and Unequip. Once the instance is unassigned, it can be assigned again only to a Hero who meets the current usage rules.
 
 ## Out of scope
 

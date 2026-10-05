@@ -75,6 +75,8 @@ A compatible Hero may equip an available item when all applicable requirements a
 
 Equipment has fixed statistics, Item Level, and requirements. Its statistics do not automatically scale to the Hero using it. Rarity expresses quality within an Item Level: an Epic Level 1 item is not equivalent in power to an Epic Level 10 item.
 
+Requirements are checked when an item is equipped. If a published content release later changes an item's requirements so that the Hero using it no longer meets them, the item stays on that Hero. Once unequipped, it can be equipped again only by a Hero who meets the current requirements.
+
 If an item is already assigned to another Hero, the UI must identify that Hero. Moving the item requires an explicit **Transfer and Unequip** operation. The authoritative service must atomically remove the previous assignment before assigning the same Equipment instance to the new Hero.
 
 Hero-bound Equipment is an explicit exception reserved for special Journey or story requirements. Ordinary Equipment is Account-bound by default.

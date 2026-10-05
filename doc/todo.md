@@ -28,10 +28,13 @@ A decided decision moves to the list below.
 
 | Decision | Blocks | Status | Discussed |
 |---|---|---|---|
-| Existing Equipment assignment when a content release changes usage rules so the assigned Hero no longer meets them | Account Inventory implementation | open | 2026-10-05: recorded as unresolved in `07-data-model/player-state/account-inventory.md`. |
 
 ## Decided
 
+- 2026-10-05: When a content release changes an Equipment item's usage rules so that the assigned
+  Hero no longer meets them, the existing assignment stays on that Hero. Usage rules are checked only
+  when an assignment is created. Recorded in `account-inventory.md`, DD-007, and
+  `equipment-and-weapon-configurations.md`.
 - 2026-10-05: Ordinary Equipment is held in an Account Inventory, renamed from Shared Inventory. One
   Equipment instance can never be used twice: one assignment per instance records one Hero, one
   Weapon Configuration, and one Equipment Slot. Usage rules are kept per item in
