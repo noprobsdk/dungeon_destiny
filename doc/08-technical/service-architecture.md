@@ -52,7 +52,8 @@ It can:
 - execute validation workflows;
 - record review and approval evidence;
 - publish immutable releases;
-- upload asset metadata and approved files.
+- upload asset metadata and approved files;
+- look up any content and player data and apply approved player-data corrections through its customer-service page.
 
 Content Studio communicates through protected administration APIs. It must not connect directly to production databases or modify Published records in place.
 
@@ -96,7 +97,8 @@ Cloudflare Access protects:
 - Content Studio;
 - administration routes;
 - upload routes;
-- validation and publication operations.
+- validation and publication operations;
+- customer-service lookup and correction routes.
 
 Cloudflare Access is not the player-login system.
 
@@ -139,6 +141,19 @@ The initial application services are logical modules within one Cloudflare Worke
 Owns authoring operations for concrete database records managed through Content Studio.
 
 It enforces Draft-only editing and delegates lifecycle decisions to Validation and Workflow.
+
+### Customer Support
+
+Owns the protected API used by the Content Studio customer-service page.
+
+It provides:
+
+- lookup of content and player data;
+- approved player-data corrections;
+- support-role authorization;
+- an audit event for every lookup and correction.
+
+It holds no player data of its own. It reads and changes data only through the owning services, such as Player and Hero, Friends and Social, and Results and Progression, and cannot bypass their rules. The allowed correction operations require separate approval before implementation.
 
 ### Validation and Workflow
 
@@ -413,6 +428,7 @@ Required observability includes:
 
 - correlated request logs;
 - authorization failures;
+- customer-service lookups and corrections;
 - publication events;
 - manifest identifiers;
 - allocation failures;

@@ -4,6 +4,8 @@ Content Studio is the internal authoring application used to manage Dungeon Dest
 
 It provides the UI and authoring workflows for creating, viewing, editing, validating, testing, reviewing, approving, and publishing concrete configurations.
 
+It also provides a customer-service page for looking up any content and player data and applying approved corrections to player data.
+
 Content Studio does not define the records, gameplay behavior, or production contracts that it manages.
 
 ## Responsibility boundary
@@ -50,11 +52,29 @@ Content Studio may manage concrete records for:
 
 These records belong to the Data Model and database. Content Studio is their management interface.
 
+## Customer service
+
+The customer-service page lets users with the support role:
+
+- look up any content and player data, including Accounts, Heroes, Account Inventory, progression, and session results; and
+- apply approved corrections to player data.
+
+Rules:
+
+- The support role is separate from content authoring. Content authors do not see player data, and support users cannot edit content.
+- Lookups and corrections go through the owning services' protected APIs, never directly to a database.
+- A correction follows the same rules as any other change made by the owning service. For example, a corrected Account Inventory must still never use one Equipment instance twice.
+- Every lookup and correction is audited with who performed it, which Account it concerned, and when. Tokens and private player data are not written to logs.
+- The allowed correction operations and their approval are not yet defined. No correction may be implemented until it is.
+
+See [DD-008](../12-decisions/decision-log.md).
+
 ## Exclusions
 
 Content Studio does not own:
 
-- current player or run state;
+- player data, which the customer-service page only looks up and corrects through the owning services;
+- run state;
 - live combat state;
 - runtime Trait Pool state;
 - game-client screens or player-facing UX;

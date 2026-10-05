@@ -20,6 +20,7 @@ and architecture decisions are owned by [`12-decisions/`](12-decisions/README.md
 | Workflow guides | done | Completed 2026-10-04. `grill-me.md` copied unchanged from `ou-oci-terraform-main`; `test-driven-development.md` and `howto.md` adapted with OCI, Terraform, and Asana terms replaced by Dungeon Destiny targets and GitHub Issues. The Asana menu entry was omitted. |
 | Document structure | done | Completed 2026-10-05. `document-structure.md` now lists `todo.md`, `document-change-management.md`, the workflow guides, `parties-and-quest-sessions.md`, `07-data-model/player-state/`, and `service-architecture.md`, and no longer describes `delivery/` as released behaviour only. |
 | In-repository Feature Request adoption | done | Completed 2026-10-04. `howto-feature-request.md`, `delivery/create-as-built.md`, and `delivery/recap.md` adapted from `ou-oci-terraform-main` with GitHub Issues in place of Asana; `delivery/README.md` rewritten to the Feature Request model; `delivery/00-features/` removed; `README.md`, `doc/README.md`, and the `.github` Feature Request issue and pull-request templates aligned. |
+| Content Studio customer-service page | done | Completed 2026-10-05. DD-008 recorded; `09-content-studio/README.md` gains the customer-service page and support role; `08-technical/service-architecture.md` gains the Customer Support service, protected routes, and audit events. The allowed correction operations remain an open decision. |
 
 ## Open decisions
 
@@ -28,6 +29,7 @@ A decided decision moves to the list below.
 
 | Decision | Blocks | Status | Discussed |
 |---|---|---|---|
+| Customer-service correction operations: which player-data corrections are allowed, who approves them, and whether live session and party state can be viewed | Customer-service page specification and implementation | open | 2026-10-05: DD-008 approved; corrections allowed through owning services, separate support role, every lookup audited. |
 
 ## Decided
 
