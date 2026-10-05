@@ -6,6 +6,12 @@ doc/
 ├── source-of-truth.md
 ├── document-structure.md
 ├── glossary.md
+├── todo.md
+├── document-change-management.md
+├── howto.md
+├── howto-feature-request.md
+├── grill-me.md
+├── test-driven-development.md
 ├── 01-game-design/
 │   ├── README.md
 │   ├── vision-and-pillars.md
@@ -18,6 +24,7 @@ doc/
 ├── 03-gameplay-systems/
 │   ├── README.md
 │   ├── equipment-and-weapon-configurations.md
+│   ├── parties-and-quest-sessions.md
 │   └── dungeon-level/
 │       ├── README.md
 │       ├── character-modes.md
@@ -61,6 +68,7 @@ doc/
 │   ├── character-model/
 │   ├── dungeon-levels/
 │   ├── journey/
+│   ├── player-state/
 │   ├── traits/
 │   └── workflow/
 ├── 08-technical/
@@ -68,7 +76,8 @@ doc/
 │   ├── database-change-management.md
 │   ├── runtime-manifest.md
 │   ├── runtime-responsibilities.md
-│   └── runtime-state-and-persistence.md
+│   ├── runtime-state-and-persistence.md
+│   └── service-architecture.md
 ├── 09-content-studio/
 │   ├── README.md
 │   └── dungeon-levels/
@@ -86,4 +95,4 @@ doc/
     └── README.md
 ```
 
-The tree contains design specifications, contracts, and indexes. Concrete game content is maintained through Content Studio. Released and verified behaviour is recorded under [`delivery/`](../delivery/).
+The tree contains design specifications, contracts, and indexes. Concrete game content is maintained through Content Studio. Feature Requests and as-built documentation of the implemented game and services are kept under [`delivery/`](../delivery/).
