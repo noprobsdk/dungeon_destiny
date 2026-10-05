@@ -33,7 +33,7 @@ The initial architecture consists of:
 6. Durable Objects for live coordination;
 7. private and published R2 storage;
 8. one session allocator;
-9. one pool of authoritative Godot dedicated servers;
+9. authoritative Godot dedicated servers, packaged as container images and initially hosted on the owner's AWS server;
 10. shared logging, metrics, and audit events.
 
 Cloudflare Queue is introduced when publication, validation, or result processing requires asynchronous execution or retries.
@@ -455,7 +455,7 @@ The platform must eventually support:
 - regional placement;
 - horizontal scaling.
 
-The initial implementation may use a simple managed container or game-server provider.
+The Godot dedicated server is packaged as a host-independent container image. It is initially hosted on the owner's AWS server. Cloudflare Containers or another host may replace it later without changing the container or its contracts with the Worker. See [DD-010](../12-decisions/decision-log.md).
 
 ## Kubernetes decision
 
@@ -508,7 +508,6 @@ The following decisions remain open:
 
 - player identity provider;
 - realtime transport protocol;
-- initial game-server hosting provider;
 - regional allocation strategy;
 - reconnect grace period;
 - active-session recovery policy;
