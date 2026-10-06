@@ -20,6 +20,7 @@ and architecture decisions are owned by [`12-decisions/`](12-decisions/README.md
 | Workflow guides | done | Completed 2026-10-04. `grill-me.md` copied unchanged from `ou-oci-terraform-main`; `test-driven-development.md` and `howto.md` adapted with OCI, Terraform, and Asana terms replaced by Dungeon Destiny targets and GitHub Issues. The Asana menu entry was omitted. |
 | Document structure | done | Completed 2026-10-05. `document-structure.md` now lists `todo.md`, `document-change-management.md`, the workflow guides, `parties-and-quest-sessions.md`, `07-data-model/player-state/`, and `service-architecture.md`, and no longer describes `delivery/` as released behaviour only. |
 | In-repository Feature Request adoption | done | Completed 2026-10-04. `howto-feature-request.md`, `delivery/create-as-built.md`, and `delivery/recap.md` adapted from `ou-oci-terraform-main` with GitHub Issues in place of Asana; `delivery/README.md` rewritten to the Feature Request model; `delivery/00-features/` removed; `README.md`, `doc/README.md`, and the `.github` Feature Request issue and pull-request templates aligned. |
+| Architecture decisions DD-011 to DD-013 | in progress | 2026-10-06: Recorded player identity in the Worker (DD-011), all runs on the game server with server changes never requiring an app update and a Cloudflare gateway and load balancer (DD-012), and WebSocket transport (DD-013). Remaining: align `08-technical/service-architecture.md`. |
 | Content Studio re-evaluation | in progress | 2026-10-05: Decided that Content Studio is cloud-hosted on Cloudflare and the POC stack is not a baseline. Governed changes: DD-009, then remove the POC-specific Drizzle and `content-studio/` paths from `08-technical/database-change-management.md`. |
 | Content Studio customer-service page | done | Completed 2026-10-05. DD-008 recorded; `09-content-studio/README.md` gains the customer-service page and support role; `08-technical/service-architecture.md` gains the Customer Support service, protected routes, and audit events. The allowed correction operations remain an open decision. |
 
@@ -30,11 +31,17 @@ A decided decision moves to the list below.
 
 | Decision | Blocks | Status | Discussed |
 |---|---|---|---|
+| Solo-run authority: whether solo Journey runs later move from the game server to the client, with server-side result validation | Game-server capacity and cost planning | open | 2026-10-06: DD-012 keeps all runs on the server for now and requires the design to allow this change later. |
+| Player account lifecycle: linking both Google and Apple to one Account, in-app Account deletion required by the app stores, and data retention after deletion | Account data model; Player Identity implementation | open | 2026-10-06: raised while deciding DD-011. |
 | Content Studio application stack: framework, ORM, repository layout, and schema location, re-evaluated rather than taken from the POC | First Content Studio Feature Request; `08-technical/database-change-management.md` | open | 2026-10-05: The POC stack (React, Vinext, Drizzle, `content-studio/` layout) was a test. Cloudflare stays the platform. |
 | Customer-service correction operations: which player-data corrections are allowed, who approves them, and whether live session and party state can be viewed | Customer-service page specification and implementation | open | 2026-10-05: DD-008 approved; corrections allowed through owning services, separate support role, every lookup audited. |
 
 ## Decided
 
+- 2026-10-06: DD-011 to DD-013 decided: Google and Apple sign-in built in the Worker; every run on
+  the authoritative game server, reachable through one Cloudflare-proxied, load-balanced endpoint,
+  with server changes never requiring an app-store update; WebSocket over TLS as the realtime
+  transport.
 - 2026-10-05: Content Studio is cloud-hosted on Cloudflare and the POC Content Studio is not a
   baseline (DD-009).
 - 2026-10-05: Cloudflare is the cloud platform for all services (DD-010). The Godot dedicated game
