@@ -2,6 +2,15 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-07: Worker name corrected
+
+- **Change:** The scope exclusion now names the `dd-dev-gateway` Worker instead
+  of `dd-dev`.
+- **Reason:** DD-017 splits the backend into domain Workers named
+  `dd-<environment>-<worker>`, so FR-00001's first Worker is `dd-dev-gateway`.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals.
+
 ## 2026-10-07: FR-00001 may start at Pending documentation
 
 - **Change:** FR-00001 now depends on this Feature Request reaching

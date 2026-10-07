@@ -108,8 +108,14 @@ approval workflow for changes under `doc/` and `delivery/`.
 
 Write production-grade edge services using modern ES modules, strict type
 safety, request isolation, and native Cloudflare platform bindings. These rules
-apply to the Worker backend, starting with `dd-dev`, and do not select a Content
-Studio framework, ORM, or validation library.
+apply to every domain Worker of the backend, starting with `gateway` (deployed
+as `dd-dev-gateway`), and do not select a Content Studio framework, ORM, or
+validation library.
+
+The backend is split into domain Workers (DD-017). Each Worker's code lives in
+`apps/<worker>/src/<service>/`, with one module per application service, and
+the types shared between Workers live in `packages/contracts/`. Workers call
+each other only through service bindings with typed RPC.
 
 ### 1. Type declarations and bindings
 
@@ -181,6 +187,10 @@ Studio framework, ORM, or validation library.
   round-trips while preserving the required ordering and transaction semantics.
 - Follow approved migrations and service ownership boundaries. Native bindings
   do not authorize bypassing owning services or permanent-data protections.
+- Bind a store only in the Worker that owns it: Content D1, private R2, and
+  the 3D asset store in `studio-api`; Player D1 in `player`; the
+  live-coordination Durable Objects in `session`. Other Workers call the owner.
+  The one exception is published R2, which `catalog` reads directly.
 
 ### Worker entry-point example
 

@@ -58,7 +58,7 @@ This Feature Request does not create or change:
 
 - any Cloudflare resource, including Workers, D1, R2 buckets other than the
   manually created state bucket, Durable Objects, Access, or DNS;
-- the `dd-dev` Worker, which belongs to FR-00001;
+- the `dd-dev-gateway` Worker, which belongs to FR-00001;
 - shared modules in `infra/terraform/modules/`;
 - environments other than `dev`;
 - AWS or the game-server host;
