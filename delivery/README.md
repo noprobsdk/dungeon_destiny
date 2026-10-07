@@ -64,6 +64,7 @@ New
 | Feature Request | Status | Created |
 |---|---|---|
 | [FR-00000: Terraform setup](FR/FR-00000-feature-request-terraform-setup/README.md) | Pending documentation | 2026-10-07 |
+| [FR-00001: Worker dev workflow](FR/FR-00001-feature-request-worker-dev-workflow/README.md) | In Specification | 2026-10-07 |
 
 A Feature Request README uses one of the Feature Request statuses defined above. The Feature Request list
 is updated whenever a Feature Request folder is added or its status changes.

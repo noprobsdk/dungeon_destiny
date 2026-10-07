@@ -63,3 +63,19 @@ It provides:
 The gateway routes requests to the domain Workers through service bindings. It must not contain gameplay rules itself.
 
 The API Gateway is part of the `gateway` Worker, which is the only Worker that player devices call. See [DD-017](../../12-decisions/decision-log.md).
+
+### Standard response format
+
+Every API response from every Worker uses one JSON format, so that both
+frontends handle success and errors the same way. See
+[DD-019](../../12-decisions/decision-log.md).
+
+| Field | Meaning |
+|---|---|
+| `status` | `"ok"` or `"error"`. The HTTP status code is still set correctly. |
+| `code` | `null` on success, or a stable error code, such as `TOKEN_EXPIRED`. Clients act on the code, never on the message text. |
+| `message` | A short sentence for people. It may be reworded or translated. |
+| `data` | The result, extra error details such as failed fields, or `null`. |
+| `meta` | `requestId` (also written to the logs), `timestamp`, `service`, `environment`, and the deployment `version`: Cloudflare's version ID, tag, and creation time. |
+
+The shared type lives in `packages/contracts/`.
