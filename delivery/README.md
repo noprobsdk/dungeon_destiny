@@ -12,16 +12,17 @@ Every change under `delivery/` follows the workflow in
 
 ## Feature Requests
 
-Each Feature Request has one folder, named `<number>-feature-request-<name>`:
+Each Feature Request has one folder under `FR/`, named `FR-<number>-feature-request-<name>`:
 
 ```text
 delivery/
 ├── README.md
-├── <number>-feature-request-<name>/
+├── FR/
+│   └── FR-<number>-feature-request-<name>/
 └── _as-built/
 ```
 
-The number is four digits, assigned in order, and never reused. It is this repository's own
+The number is five digits, assigned in order, and never reused. It is this repository's own
 numbering. It does not correspond to an identifier in any other system.
 
 A Feature Request folder contains a `README.md` and `CHANGELOG.md`. It may contain more where the work
@@ -62,6 +63,7 @@ New
 
 | Feature Request | Status | Created |
 |---|---|---|
+| [FR-00000: Terraform setup](FR/FR-00000-feature-request-terraform-setup/README.md) | In Specification | 2026-10-07 |
 
 A Feature Request README uses one of the Feature Request statuses defined above. The Feature Request list
 is updated whenever a Feature Request folder is added or its status changes.

@@ -10,6 +10,7 @@ doc/
 ├── document-change-management.md
 ├── howto.md
 ├── howto-feature-request.md
+├── howto-cloudflare-setup.md
 ├── grill-me.md
 ├── test-driven-development.md
 ├── 01-game-design/

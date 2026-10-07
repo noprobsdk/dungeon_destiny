@@ -40,6 +40,10 @@ Cloudflare Queue is introduced when publication, validation, or result processin
 
 The logical services inside the modular Worker may later become independent deployments without changing their public contracts.
 
+TypeScript is the language of the Cloudflare Worker backend. It is compiled to JavaScript for execution on Cloudflare. The first Worker is the development Worker `dd-dev`. See [DD-015](../12-decisions/decision-log.md).
+
+Cloudflare infrastructure is managed with Terraform, and Worker code is deployed with Wrangler. Terraform state is kept in a Cloudflare R2 bucket, with one state per environment. See [DD-016](../12-decisions/decision-log.md).
+
 ## Clients and tools
 
 ### Content Studio

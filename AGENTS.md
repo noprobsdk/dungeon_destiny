@@ -62,3 +62,112 @@ approval workflow for changes under `doc/` and `delivery/`.
 
 - `doc/` states intended design and is not evidence of implementation.
 - `delivery/` records Feature Requests and verified delivery.
+
+## TypeScript and Cloudflare Workers
+
+Write production-grade edge services using modern ES modules, strict type
+safety, request isolation, and native Cloudflare platform bindings. These rules
+apply to the Worker backend, starting with `dd-dev`, and do not select a Content
+Studio framework, ORM, or validation library.
+
+### 1. Type declarations and bindings
+
+- Generate `Env` and runtime types with `wrangler types` from the actual Worker
+  configuration. Regenerate after binding or compatibility changes. Do not
+  hand-write binding interfaces or edit generated types.
+- Enable TypeScript strict mode. Do not use `any`; treat untrusted input as
+  `unknown` and validate it at runtime using schemas or narrow type guards.
+- Type module Worker entry points with `satisfies ExportedHandler<Env>` and
+  explicit handler types where useful.
+
+### 2. State and memory isolation
+
+- Never store request-scoped mutable state, identities, tokens, or user data in
+  global variables. Worker isolates can serve multiple requests.
+- Pass a typed request-context object explicitly through execution flows. If
+  Hono is separately selected, its per-request context variables may be used.
+- Pass `ExecutionContext` for lifecycle operations such as `waitUntil`; do not
+  treat it as an arbitrary mutable request-data container.
+- Immutable schemas and constants may live at module scope.
+
+### 3. Binding invocation over REST
+
+- Use configured native bindings such as `env.PLAYER_D1`, `env.CONTENT_D1`, R2
+  buckets, and Durable Object namespaces instead of public REST APIs for those
+  resources. Bindings provide access without embedding REST API credentials.
+- Do not assume binding calls are in-process or have zero network latency;
+  storage and Durable Object operations may involve remote services.
+
+### 4. Asynchronous execution and promises
+
+- Never leave floating promises. Await required work, or register bounded
+  background work with `ctx.waitUntil(promise)` and handle failures.
+- Return responses promptly, but await work required for correctness before
+  acknowledging success. Use `waitUntil` for optional work such as telemetry.
+- `waitUntil` has runtime limits and is not durable execution. Work requiring
+  guaranteed retries or durable delivery needs an approved Queue or other
+  durable workflow; await its acceptance before reporting it as accepted.
+
+### 5. Runtime and compatibility
+
+- Use Module Worker syntax: `export default { fetch(request, env, ctx) }`.
+  Do not use legacy `addEventListener("fetch", ...)` entry points.
+- Pin a current, tested compatibility date in Wrangler configuration and
+  generate types for it. Ensure Node.js compatibility is available when needed;
+  enable `nodejs_compat` where the configured date requires it rather than
+  assuming every project has identical flags.
+- Prefer standard Web APIs such as `fetch`, `Request`, `Response`, Web Crypto,
+  and `TransformStream`. Verify that any Node.js API used is supported by the
+  configured Workers runtime rather than only available as a stub.
+
+### 6. Security and cryptography
+
+- Never use `Math.random()` for tokens, security-sensitive session identifiers,
+  or other security decisions. Use cryptographically secure Web Crypto APIs
+  such as `crypto.getRandomValues`, `crypto.randomUUID`, and `crypto.subtle`
+  as appropriate.
+- Authenticate and authorize operations before accessing protected player data.
+  A valid payload is not proof of identity, ownership, or gameplay authority.
+- Clients cannot submit authoritative scores, rewards, or progression changes.
+  Permanent results must come through the trusted-server result contract.
+
+### 7. Database and prepared statements
+
+- Use D1 prepared statements with bound parameters for untrusted values; never
+  interpolate them into SQL. Durable Object SQL uses its own parameter-binding
+  API, not the D1 `prepare` API.
+- Prefer `env.DB.batch([...])` for suitable D1 multi-query operations to reduce
+  round-trips while preserving the required ordering and transaction semantics.
+- Follow approved migrations and service ownership boundaries. Native bindings
+  do not authorize bypassing owning services or permanent-data protections.
+
+### Worker entry-point example
+
+This illustrates the module and typing pattern only. Endpoint behavior belongs
+in the approved Feature Request; this example is not implementation evidence.
+
+```typescript
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname !== "/health") {
+      return new Response("Not Found", { status: 404 });
+    }
+    if (request.method !== "GET") {
+      return new Response("Method Not Allowed", {
+        status: 405,
+        headers: { Allow: "GET" },
+      });
+    }
+    return Response.json({ status: "ok" });
+  },
+} satisfies ExportedHandler<Env>;
+```
+
+References:
+
+- [Worker type generation](https://developers.cloudflare.com/workers/wrangler/commands/workers/#types)
+- [Bindings](https://developers.cloudflare.com/workers/runtime-apis/bindings/)
+- [Execution context](https://developers.cloudflare.com/workers/runtime-apis/context/)
+- [Node.js compatibility](https://developers.cloudflare.com/workers/runtime-apis/nodejs/)
+- [D1 database API](https://developers.cloudflare.com/d1/worker-api/d1-database/)

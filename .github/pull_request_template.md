@@ -1,6 +1,6 @@
 ## Feature Request
 
-- Feature Request: [<number>](delivery/<number>-feature-request-<name>/README.md)
+- Feature Request: [FR-<number>](delivery/FR/FR-<number>-feature-request-<name>/README.md)
 - GitHub Issue:
 - Design baseline commit:
 
