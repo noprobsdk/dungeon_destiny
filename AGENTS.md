@@ -10,8 +10,49 @@ Content Studio, database, and Godot implementation.
 
 ## Commands
 
-No application code exists yet. Setup, run, test, lint, and format commands
-are added here by the Feature Request that introduces them.
+Setup, run, test, lint, and format commands are added here by the Feature
+Request that introduces them. Run every command from the repository root.
+
+### Onboarding (FR-00000)
+
+Check that this machine can run Terraform. In a terminal the script is guided
+and asks before changing anything; `--check` only reads. Agents use `--check`.
+
+```bash
+devops/onboarding.sh
+devops/onboarding.sh --check
+```
+
+The manual setup steps are in `doc/howto-cloudflare-setup.md`.
+
+### Terraform (FR-00000)
+
+Load the credentials and the R2 address into the current shell, then run
+Terraform for the `dev` environment. Never print the credential values, and do
+not set `TF_LOG` when output is shared.
+
+```bash
+source ~/.config/dungeon-destiny/cloudflare.env
+export AWS_ENDPOINT_URL_S3="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+terraform -chdir=infra/terraform/envs/dev init
+terraform -chdir=infra/terraform/envs/dev plan
+terraform -chdir=infra/terraform/envs/dev apply
+terraform fmt -recursive infra/terraform
+```
+
+`apply` changes real Cloudflare infrastructure and needs explicit approval.
+
+### Tests and lint (FR-00000)
+
+```bash
+tests/FR-00000/onboarding_test.sh
+tests/FR-00000/terraform_test.sh
+shellcheck devops/onboarding.sh tests/FR-00000/*.sh
+```
+
+`onboarding_test.sh` needs no network or credentials. `terraform_test.sh` runs
+`init`, `plan`, `apply`, and a lock test against the R2 state bucket; it
+creates no Cloudflare resources.
 
 ## Conventions
 

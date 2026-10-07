@@ -38,6 +38,16 @@ Cloudflare resources other than the state bucket.
 Cloudflare dashboard labels below are taken from Cloudflare's documentation
 and may change.
 
+The guided onboarding script can do steps 1, 2, and 8 for you, explains where
+to find each value, and checks every step. Run it from the repository root, and
+see [`devops/README.md`](../devops/README.md):
+
+```bash
+devops/onboarding.sh
+```
+
+The dashboard steps 3 to 7 are always done by hand.
+
 ### 1. Install Terraform
 
 Working directory: any. Commands from HashiCorp's installation page:
@@ -154,8 +164,15 @@ Expected result: five lines ending in `set`.
 In the dashboard, `dd-terraform-state` is listed on the **R2 object storage**
 page, and the R2 API token is scoped to that bucket only.
 
-FR-00000 adds an onboarding script in `devops/` that also checks Cloudflare and
-R2 access. Until it exists, the checks above are the verification.
+The onboarding script also checks that Cloudflare accepts the Global API Key and
+that the R2 access key pair can list the `dd-terraform-state` bucket. Working
+directory: the repository root.
+
+```bash
+devops/onboarding.sh --check
+```
+
+Expected result: the last line reads `0 failed`.
 
 ## Failure handling
 

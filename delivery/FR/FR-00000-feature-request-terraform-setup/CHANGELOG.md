@@ -2,6 +2,17 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-07: Implementation and implementation report
+
+- **Change:** Implemented the onboarding script, its README, the Terraform dev
+  project, the ignore rules, the `AGENTS.md` commands, and the setup-guide
+  note on the guided script. Added `implementation_report.md`. 36 tests pass,
+  including `init`, `plan`, `apply`, and state locking against R2.
+- **Reason:** Steps 2 to 10 of the implementation sequence.
+- **Affected files:** `implementation_report.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals. Clean-checkout
+  verification from Section 16 is still to be done.
+
 ## 2026-10-07: Guided onboarding script
 
 - **Change:** Changed the onboarding script from read-only to guided. In a
