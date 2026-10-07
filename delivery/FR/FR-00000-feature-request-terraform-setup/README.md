@@ -1,6 +1,6 @@
 # FR-00000: Terraform setup
 
-- **Status:** In Progress
+- **Status:** In Review
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** No GitHub Issue yet.
@@ -186,8 +186,9 @@ In guided mode, the script walks through each failed check:
   as `sudo apt install shellcheck`, and runs it only after Yes;
 - a missing or unsafe credential file: it offers to create the folder with
   mode `700` and the file with mode `600`;
-- a missing value: it explains where to find the value, then asks for it with
-  hidden input and writes it to the credential file;
+- a missing value: it explains where to find the value, then reads it at its
+  prompt and writes it to the credential file. Keys are read with hidden input;
+  the email address is shown as it is typed. Enter skips the value;
 - a rejected Cloudflare or R2 check: it shows the dashboard step from the setup
   guide and asks whether the step is done.
 
@@ -244,7 +245,8 @@ Write these checks before the implementation and confirm they fail first:
 - In guided mode, an empty answer or No runs no command and changes no file.
 - In guided mode, an install command runs only after Yes.
 - In guided mode, a value entered for a missing credential is written to the
-  credential file, is not shown on screen, and the file stays at mode `600`.
+  credential file, no entered value appears in the script's output, and the
+  file stays at mode `600`.
 - In guided mode, the script explains where to find each value before asking
   for it.
 - In guided mode, after Yes to a dashboard step, the script checks that item

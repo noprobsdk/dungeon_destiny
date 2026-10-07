@@ -99,8 +99,11 @@ Run on the owner's machine with the owner's credentials.
 Verified locally: the onboarding script's behaviour, with stand-in programs.
 Verified against Cloudflare: Global API Key access, R2 bucket access,
 `terraform init`, `plan`, and `apply` against the R2 backend, and state locking.
-Not yet verified: a fresh `terraform init` from a clean checkout, and the
-`AGENTS.md` commands from a clean checkout (Section 16).
+Verified from a clean clone of commit `d00934f`: `devops/onboarding.sh --check`
+(13 passed), ShellCheck (no findings), both test files (27 and 9 passed), and
+the `AGENTS.md` Terraform commands: `init` connected to the R2 backend,
+`plan` reported no changes, and `fmt -check` was clean. No file in the clone
+changed, so the committed provider lock file matched.
 
 ## Limitations and follow-up work
 
@@ -126,5 +129,4 @@ setup now stops if its temporary folder cannot be created.
 > machine through the setup and checks Cloudflare and R2 access;
 > `infra/terraform/envs/dev/` holds the Terraform project with its state in the
 > R2 bucket `dd-terraform-state`, with working state locking. All 36 tests in
-> `tests/FR-00000/` pass. Remaining before `In Review`: clean-checkout
-> verification.
+> `tests/FR-00000/` pass, also from a clean clone.

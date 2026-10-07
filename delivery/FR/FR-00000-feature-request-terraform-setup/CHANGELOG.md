@@ -2,6 +2,18 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-07: Moved to In Review
+
+- **Change:** Recorded the clean-checkout verification of commit `d00934f` in
+  `implementation_report.md`; every Section 16 check has passed. Corrected
+  Section 10 and Section 14 of `README.md`: keys are read with hidden input,
+  the email address is shown as it is typed, and no entered value appears in
+  the script's output. Moved the status to `In Review`.
+- **Reason:** Implementation, verification, and the implementation report are
+  complete, and the README wording now matches approved decision 15.
+- **Affected files:** `README.md`, `implementation_report.md`, `CHANGELOG.md`.
+- **Verification:** All three files match their approved proposals.
+
 ## 2026-10-07: Implementation and implementation report
 
 - **Change:** Implemented the onboarding script, its README, the Terraform dev
