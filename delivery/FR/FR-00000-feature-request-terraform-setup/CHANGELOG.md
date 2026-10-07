@@ -2,6 +2,42 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-07: Guided onboarding script
+
+- **Change:** Changed the onboarding script from read-only to guided. In a
+  terminal it walks through each failed check, explains where to find each
+  value, and asks Yes or No before installing a package, creating the
+  credential file, or storing a value with hidden input. After each fix it
+  checks again. With `--check`, or without a terminal, it only reads. Added
+  six Section 14 checks for the guided behaviour.
+- **Reason:** The project owner asked for the script to walk through failed
+  checks and offer the fixes.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals.
+
+## 2026-10-07: Tests folder and jq added
+
+- **Change:** Added the Feature Request tests in `tests/FR-00000/` to scope,
+  with every Section 14 check kept there as a named test. Added a check that
+  the onboarding script exists in `devops/` and is executable. Added jq to the
+  prerequisites.
+- **Reason:** The project owner set the repository rule of one test folder per
+  Feature Request, recorded in `doc/test-driven-development.md`, and chose jq
+  to read Terraform's JSON version output.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals.
+
+## 2026-10-07: Moved to In Progress
+
+- **Change:** Set the design baseline commit to `4e50cf6`, removed the last
+  blocker, and moved the status through `Backlog` to `In Progress`. Reordered
+  the implementation sequence so the onboarding script is written and run
+  before the manual prerequisites are completed.
+- **Reason:** The source documentation was committed. The project owner chose
+  to build the onboarding script first so it reports the missing prerequisites.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals.
+
 ## 2026-10-07: Decisions resolved and setup guide linked
 
 - **Change:** Recorded the resolved decisions: the Cloudflare account ID is

@@ -1,0 +1,423 @@
+#!/usr/bin/env bash
+# FR-00000 onboarding check.
+#
+# Checks that this machine has the packages and access needed to run
+# Terraform for Dungeon Destiny.
+#
+# Guided mode (the default in a terminal, or --guided) walks through each
+# failed check and asks Yes or No before running an install command, creating
+# the credential file, or storing a value. Check-only mode (--check, or no
+# terminal) only reads and never prompts. Credential values are never printed.
+#
+# Manual setup steps: doc/howto-cloudflare-setup.md
+# Usage: devops/onboarding.sh [--guided | --check]
+# Exit status: 0 when every check passes, 1 when any check still fails,
+# 2 for an unknown argument.
+
+set -u
+
+readonly MIN_TERRAFORM="1.11.0"
+readonly MIN_CURL="7.75.0"
+readonly STATE_BUCKET="dd-terraform-state"
+readonly CRED_DIR="$HOME/.config/dungeon-destiny"
+readonly CRED_FILE="$CRED_DIR/cloudflare.env"
+# R2 requires the x-amz-content-sha256 header on signed requests, and curl
+# before 8.x does not add it. This is the SHA-256 of an empty request body.
+readonly EMPTY_BODY_SHA256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+readonly REQUIRED_VARS=(CLOUDFLARE_EMAIL CLOUDFLARE_API_KEY CLOUDFLARE_ACCOUNT_ID AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
+
+script_dir="${BASH_SOURCE[0]%/*}"
+[ "$script_dir" = "${BASH_SOURCE[0]}" ] && script_dir="."
+REPO_ROOT="$(cd "$script_dir/.." && pwd)"
+readonly GUIDE="$REPO_ROOT/doc/howto-cloudflare-setup.md"
+
+case "${1:-}" in
+  --guided) guided=true ;;
+  --check) guided=false ;;
+  "") if [ -t 0 ]; then guided=true; else guided=false; fi ;;
+  *)
+    echo "Usage: devops/onboarding.sh [--guided | --check]" >&2
+    exit 2
+    ;;
+esac
+
+passed=0
+failed=0
+skipped=0
+curl_ok=false
+creds_loaded=false
+
+# Each check sets MSG, and HINT when it fails, and returns 0 (pass),
+# 1 (fail), or 2 (skip).
+MSG=""
+HINT=""
+
+has() { command -v "$1" >/dev/null 2>&1; }
+
+# True when version $1 is at least version $2.
+version_at_least() {
+  [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -n 1)" = "$2" ]
+}
+
+# Ask a Yes/No question. Only Yes returns true; an empty answer is No.
+ask() {
+  local answer
+  printf '%s [y/N] ' "$1"
+  if ! IFS= read -r answer; then
+    echo
+    return 1
+  fi
+  # A terminal echoes the answer and its line break; piped input does not.
+  [ -t 0 ] || echo
+  case "$answer" in
+    [Yy] | [Yy][Ee][Ss]) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Read a value typed straight at its prompt. Keys are read without being
+# shown; the email address is shown as it is typed. Enter alone skips.
+read_value() {
+  local __var="$1" __value
+  if [ "$__var" = "CLOUDFLARE_EMAIL" ]; then
+    printf '      Enter %s (press Enter to skip): ' "$__var"
+    IFS= read -r __value || __value=""
+    [ -t 0 ] || echo
+  else
+    printf '      Enter %s (input is hidden, press Enter to skip): ' "$__var"
+    IFS= read -r -s __value || __value=""
+    echo
+  fi
+  if [ -z "$__value" ]; then
+    echo "      Skipped."
+    return 1
+  fi
+  printf -v "$__var" '%s' "$__value"
+  export "${__var?}"
+}
+
+# Write one value to the credential file, replacing any earlier line for it.
+store_value() {
+  local var="$1" tmp
+  tmp="$(mktemp "$CRED_DIR/.cloudflare.env.XXXXXX")" || return 1
+  grep -v "^export $var=" "$CRED_FILE" >"$tmp" 2>/dev/null
+  printf 'export %s=%q\n' "$var" "${!var}" >>"$tmp"
+  mv "$tmp" "$CRED_FILE"
+  chmod 600 "$CRED_FILE"
+}
+
+# Run a check; in guided mode, offer its fix and check again after the fix.
+# Usage: run CHECK FIX [ARGUMENT]. The argument is passed to both functions.
+run() {
+  local check="$1" fix="$2" result
+  shift 2
+  "$check" "$@"
+  result=$?
+  if [ "$result" -eq 1 ] && [ "$guided" = true ]; then
+    echo "      $MSG"
+    if "$fix" "$@"; then
+      hash -r
+      "$check" "$@"
+      result=$?
+    fi
+  fi
+  case "$result" in
+    0) passed=$((passed + 1)); echo "PASS  $MSG" ;;
+    1) failed=$((failed + 1)); echo "FAIL  $MSG"; echo "      Fix: $HINT" ;;
+    *) skipped=$((skipped + 1)); echo "SKIP  $MSG" ;;
+  esac
+}
+
+install_package() {
+  local package="$1"
+  ask "      Install $package with 'sudo apt-get install -y $package'?" || return 1
+  sudo apt-get install -y "$package"
+}
+
+# --- Packages ---------------------------------------------------------------
+
+check_jq() {
+  if has jq; then MSG="jq is installed"; return 0; fi
+  MSG="jq is not installed"
+  HINT="sudo apt-get install -y jq (see $GUIDE, step 2)"
+  return 1
+}
+fix_jq() { install_package jq; }
+
+check_terraform() {
+  if ! has terraform; then
+    MSG="Terraform is not installed"
+    HINT="install Terraform $MIN_TERRAFORM or later (see $GUIDE, step 1)"
+    return 1
+  fi
+  if ! has jq; then
+    MSG="Terraform version not checked: jq is needed to read it"
+    return 2
+  fi
+  local version
+  version="$(terraform version -json 2>/dev/null | jq -r '.terraform_version' 2>/dev/null)"
+  if [ -z "$version" ] || [ "$version" = "null" ]; then
+    MSG="Terraform version could not be read"
+    HINT="reinstall Terraform (see $GUIDE, step 1)"
+    return 1
+  fi
+  if version_at_least "$version" "$MIN_TERRAFORM"; then
+    MSG="Terraform $version is installed (need $MIN_TERRAFORM or later)"
+    return 0
+  fi
+  MSG="Terraform $version is too old (need $MIN_TERRAFORM or later)"
+  HINT="upgrade Terraform (see $GUIDE, step 1)"
+  return 1
+}
+
+fix_terraform() {
+  echo "      This runs the commands from $GUIDE, step 1:"
+  echo "      it adds HashiCorp's apt repository and installs Terraform."
+  ask "      Install Terraform now?" || return 1
+  local codename
+  codename="$(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release 2>/dev/null || lsb_release -cs)"
+  wget -O - https://apt.releases.hashicorp.com/gpg |
+    sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg &&
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $codename main" |
+    sudo tee /etc/apt/sources.list.d/hashicorp.list >/dev/null &&
+    sudo apt-get update &&
+    sudo apt-get install -y terraform
+}
+
+check_curl() {
+  if ! has curl; then
+    MSG="curl is not installed"
+    HINT="sudo apt-get install -y curl"
+    return 1
+  fi
+  local version
+  version="$(curl --version 2>/dev/null | head -n 1 | cut -d ' ' -f 2)"
+  if [ -n "$version" ] && version_at_least "$version" "$MIN_CURL"; then
+    MSG="curl $version is installed (need $MIN_CURL or later)"
+    curl_ok=true
+    return 0
+  fi
+  MSG="curl ${version:-unknown} is too old (need $MIN_CURL or later)"
+  HINT="sudo apt-get install -y curl"
+  return 1
+}
+fix_curl() { install_package curl; }
+
+check_shellcheck() {
+  if has shellcheck; then MSG="ShellCheck is installed"; return 0; fi
+  MSG="ShellCheck is not installed"
+  HINT="sudo apt-get install -y shellcheck (see $GUIDE, step 2)"
+  return 1
+}
+fix_shellcheck() { install_package shellcheck; }
+
+check_git() {
+  if has git; then MSG="git is installed"; return 0; fi
+  MSG="git is not installed"
+  HINT="sudo apt-get install -y git"
+  return 1
+}
+fix_git() { install_package git; }
+
+# --- Credential file and values ----------------------------------------------
+
+check_credential_file() {
+  creds_loaded=false
+  if [ ! -f "$CRED_FILE" ]; then
+    MSG="credential file $CRED_FILE does not exist"
+    HINT="create it (see $GUIDE, step 8)"
+    return 1
+  fi
+  local mode
+  mode="$(stat -c '%a' "$CRED_FILE")"
+  if [ "${mode: -2}" != "00" ]; then
+    MSG="credential file is readable by others (mode $mode)"
+    HINT="chmod 600 $CRED_FILE"
+    return 1
+  fi
+  # shellcheck source=/dev/null
+  if ! source "$CRED_FILE"; then
+    MSG="credential file could not be read"
+    HINT="check its contents (see $GUIDE, step 8)"
+    return 1
+  fi
+  creds_loaded=true
+  MSG="credential file exists and only its owner can read it"
+  return 0
+}
+
+fix_credential_file() {
+  if [ ! -f "$CRED_FILE" ]; then
+    ask "      Create $CRED_FILE now (folder mode 700, file mode 600)?" || return 1
+    mkdir -p "$CRED_DIR" && chmod 700 "$CRED_DIR" &&
+      (umask 077 && : >"$CRED_FILE") && chmod 600 "$CRED_FILE"
+  else
+    ask "      Make the credential file readable only by you (chmod 600)?" || return 1
+    chmod 700 "$CRED_DIR" && chmod 600 "$CRED_FILE"
+  fi
+}
+
+where_to_find() {
+  case "$1" in
+    CLOUDFLARE_EMAIL)
+      echo "      Where to find it: the email address you use to sign in to Cloudflare." ;;
+    CLOUDFLARE_API_KEY)
+      echo "      Where to find it: Cloudflare dashboard > User Profile > API Tokens >"
+      echo "      API Keys > View next to Global API Key ($GUIDE, step 6)." ;;
+    CLOUDFLARE_ACCOUNT_ID)
+      echo "      Where to find it: Cloudflare dashboard > Account home > Search (CTRL + K) >"
+      echo "      enter 'Copy account ID' and select the result ($GUIDE, step 7)." ;;
+    AWS_ACCESS_KEY_ID)
+      echo "      The R2 keys exist only after these Cloudflare dashboard steps ($GUIDE, steps 3 to 5):"
+      echo "        1. Storage & databases > R2 > Overview: add R2 to the account if it is not added yet."
+      echo "        2. R2 object storage > Create bucket: name $STATE_BUCKET, Location None, Create bucket."
+      echo "        3. R2 object storage > Account Details > Manage next to API Tokens >"
+      echo "           Create Account API token: permission Object Read & Write, limited to the"
+      echo "           $STATE_BUCKET bucket only, then Create Account API token."
+      echo "      The next page shows the Access Key ID and the Secret Access Key, only once."
+      echo "      Keep it open until both are entered. If you have not done these steps yet,"
+      echo "      press Enter to skip, do them, and run this script again."
+      echo "      Where to find it: the Access Key ID on that page. This is an R2 key, not an AWS key." ;;
+    AWS_SECRET_ACCESS_KEY)
+      echo "      Where to find it: the Secret Access Key shown once when you created the R2 API"
+      echo "      token ($GUIDE, step 5). If you no longer have it, delete the token and create"
+      echo "      a new one." ;;
+  esac
+}
+
+# Explain where to find a value, then read it and store it.
+enter_value() {
+  local var="$1"
+  where_to_find "$var"
+  read_value "$var" || return 1
+  store_value "$var"
+}
+
+check_value() {
+  local var="$1"
+  if [ "$creds_loaded" != true ]; then
+    MSG="$var not checked: the credential file is missing or unsafe"
+    return 2
+  fi
+  if [ -n "${!var:-}" ]; then
+    MSG="$var is set"
+    return 0
+  fi
+  MSG="$var is not set in the credential file"
+  HINT="add it (see $GUIDE, step 8)"
+  return 1
+}
+fix_value() { enter_value "$1"; }
+
+# --- Cloudflare and R2 access ------------------------------------------------
+
+# Run curl with its configuration on standard input, so no credential appears
+# in the command line. Prints the HTTP status code.
+curl_status() {
+  curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+    --max-time 20 --config - 2>/dev/null
+}
+
+check_cloudflare() {
+  if [ "$curl_ok" != true ]; then
+    MSG="Cloudflare access not checked: curl $MIN_CURL or later is needed"
+    return 2
+  fi
+  if [ "$creds_loaded" != true ] || [ -z "${CLOUDFLARE_EMAIL:-}" ] || [ -z "${CLOUDFLARE_API_KEY:-}" ]; then
+    MSG="Cloudflare access not checked: CLOUDFLARE_EMAIL and CLOUDFLARE_API_KEY are needed"
+    return 2
+  fi
+  local status
+  status="$(curl_status <<EOF
+url = "https://api.cloudflare.com/client/v4/user"
+header = "X-Auth-Email: $CLOUDFLARE_EMAIL"
+header = "X-Auth-Key: $CLOUDFLARE_API_KEY"
+EOF
+)"
+  if [ "$status" = "200" ]; then
+    MSG="Cloudflare accepts the Global API Key and account email"
+    return 0
+  fi
+  MSG="Cloudflare rejected the Global API Key or account email (HTTP $status)"
+  HINT="check both values (see $GUIDE, step 6)"
+  return 1
+}
+
+fix_cloudflare() {
+  echo "      Check that your Cloudflare email address is verified and that the Global"
+  echo "      API Key is the current one ($GUIDE, step 6)."
+  ask "      Is that step done?" || return 1
+  if ask "      Re-enter CLOUDFLARE_EMAIL and CLOUDFLARE_API_KEY?"; then
+    enter_value CLOUDFLARE_EMAIL
+    enter_value CLOUDFLARE_API_KEY
+  fi
+  return 0
+}
+
+check_r2() {
+  if [ "$curl_ok" != true ]; then
+    MSG="R2 access not checked: curl $MIN_CURL or later is needed"
+    return 2
+  fi
+  if [ "$creds_loaded" != true ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ] ||
+    [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+    MSG="R2 access not checked: CLOUDFLARE_ACCOUNT_ID, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY are needed"
+    return 2
+  fi
+  local status
+  status="$(curl_status <<EOF
+url = "https://$CLOUDFLARE_ACCOUNT_ID.r2.cloudflarestorage.com/$STATE_BUCKET?list-type=2&max-keys=1"
+user = "$AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY"
+aws-sigv4 = "aws:amz:auto:s3"
+header = "x-amz-content-sha256: $EMPTY_BODY_SHA256"
+EOF
+)"
+  if [ "$status" = "200" ]; then
+    MSG="R2 access key pair can list the $STATE_BUCKET bucket"
+    return 0
+  fi
+  MSG="R2 rejected the access key pair or the bucket was not found (HTTP $status)"
+  HINT="check the bucket, the account ID, and the R2 token (see $GUIDE, steps 4, 5, and 7)"
+  return 1
+}
+
+fix_r2() {
+  echo "      Check in the Cloudflare dashboard that the $STATE_BUCKET bucket exists and that"
+  echo "      the R2 API token has Object Read & Write on it ($GUIDE, steps 4 and 5)."
+  ask "      Is that step done?" || return 1
+  if ask "      Re-enter CLOUDFLARE_ACCOUNT_ID, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY?"; then
+    enter_value CLOUDFLARE_ACCOUNT_ID
+    enter_value AWS_ACCESS_KEY_ID
+    enter_value AWS_SECRET_ACCESS_KEY
+  fi
+  return 0
+}
+
+# --- Main ---------------------------------------------------------------------
+
+if [ "$guided" = true ]; then
+  echo "Dungeon Destiny onboarding check (FR-00000), guided mode"
+  echo "Each fix is offered as a question. Press Enter to answer No."
+else
+  echo "Dungeon Destiny onboarding check (FR-00000), check-only mode"
+fi
+echo
+
+run check_jq fix_jq
+run check_terraform fix_terraform
+run check_curl fix_curl
+run check_shellcheck fix_shellcheck
+run check_git fix_git
+run check_credential_file fix_credential_file
+for var in "${REQUIRED_VARS[@]}"; do
+  run check_value fix_value "$var"
+done
+run check_cloudflare fix_cloudflare
+run check_r2 fix_r2
+
+echo
+echo "$passed passed, $failed failed, $skipped skipped"
+if [ "$failed" -gt 0 ]; then
+  exit 1
+fi
+exit 0

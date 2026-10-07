@@ -1,6 +1,6 @@
 # FR-00000: Terraform setup
 
-- **Status:** In Specification
+- **Status:** In Progress
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** No GitHub Issue yet.
@@ -14,23 +14,27 @@ This is the foundation for later Feature Requests, starting with FR-00001. It
 proves that Terraform can connect to the Cloudflare account, store its state in
 R2, and run `plan` and `apply`. It creates no Cloudflare resources.
 
-It also adds an onboarding script that checks whether a machine has the
-packages and access needed to run Terraform.
+It also adds a guided onboarding script that checks whether a machine has the
+packages and access needed to run Terraform and, after the owner answers Yes,
+helps fix what is missing.
 
 ## 2. Implementation sequence
 
-1. Move this Feature Request to `Backlog`.
-2. Complete the manual prerequisites in Section 6.
-3. Write the checks in Section 14 and confirm they fail.
-4. Create the onboarding script in `devops/` until its checks pass, and run it
-   on the owner's machine.
-5. Create the Terraform project in `infra/terraform/envs/dev/` until the checks
+1. Move this Feature Request to `Backlog`, then to `In Progress`.
+2. Write the onboarding script checks in Section 14 and confirm they fail.
+3. Create the onboarding script in `devops/` until its checks pass.
+4. Run the onboarding script on the owner's machine and confirm that it
+   reports the missing manual prerequisites.
+5. Complete the manual prerequisites in Section 6 until the onboarding script
+   passes.
+6. Write the Terraform checks in Section 14 and confirm they fail.
+7. Create the Terraform project in `infra/terraform/envs/dev/` until the checks
    pass.
-6. Run `terraform init`, `plan`, and `apply` against the `dev` state in R2.
-7. Verify state locking.
-8. Add the onboarding, setup, and run commands to `AGENTS.md`.
-9. Complete `implementation_report.md` and move to `In Review`.
-10. After acceptance, hand over to documentation and as-built.
+8. Run `terraform init`, `plan`, and `apply` against the `dev` state in R2.
+9. Verify state locking.
+10. Add the onboarding, setup, and run commands to `AGENTS.md`.
+11. Complete `implementation_report.md` and move to `In Review`.
+12. After acceptance, hand over to documentation and as-built.
 
 FR-00001 depends on this Feature Request being complete.
 
@@ -38,9 +42,10 @@ FR-00001 depends on this Feature Request being complete.
 
 This Feature Request creates:
 
-- a read-only onboarding script in `devops/`, described in Section 10;
+- a guided onboarding script in `devops/`, described in Section 10;
 - `devops/README.md`, which explains how to run the onboarding script and links
   to the setup guide;
+- the Feature Request tests in `tests/FR-00000/`;
 - the Terraform project in `infra/terraform/envs/dev/`;
 - the pinned Terraform and Cloudflare provider versions and the committed
   provider lock file;
@@ -72,8 +77,7 @@ This Feature Request does not create or change:
   the manual setup steps this Feature Request implements and verifies.
 - [`doc/test-driven-development.md`](../../../doc/test-driven-development.md).
 
-Design baseline commit: not yet set. The DD-016 source changes are not yet
-committed; the baseline is the commit that contains them.
+Design baseline commit: `4e50cf6`.
 
 Source-document readiness gate: passes for this scope. The only remaining
 "Terraform setup (FR-00000)" item in `doc/todo.md` is this Feature Request.
@@ -97,7 +101,7 @@ Manual prerequisites, completed by the project owner by following
 - The Cloudflare account exists.
 - Terraform 1.11 or later is installed in WSL. S3 backend lock files were
   introduced in 1.10 and became generally available in 1.11.
-- ShellCheck is installed in WSL.
+- ShellCheck and jq are installed in WSL.
 - An R2 bucket named `dd-terraform-state` is created by hand.
 - An R2 access key pair is created with read and write access to that bucket
   only.
@@ -108,9 +112,7 @@ Manual prerequisites, completed by the project owner by following
 
 The onboarding script checks these prerequisites.
 
-Blockers:
-
-- The DD-016 source changes committed, so the design baseline can be set.
+Blockers: none.
 
 ## 7. Approved decisions
 
@@ -133,7 +135,10 @@ Blockers:
 - Plain Terraform is used. Terragrunt is reconsidered when a second
   environment is added.
 - An onboarding script under `devops/` checks the packages and access needed
-  to run Terraform. It only reads; it never creates or changes anything.
+  to run Terraform. Run in a terminal, it is guided: for each failed check it
+  asks Yes or No before running an install command, creating the credential
+  file, or asking for a value. With `--check`, or without a terminal, it only
+  reads and never prompts.
 - The onboarding script is written in Bash and checked with ShellCheck. Its
   failure cases are tested with scripted tests.
 - The Cloudflare account ID is kept in the private credential file and passed
@@ -165,8 +170,8 @@ Terraform is run only by the project owner from WSL.
 
 ### Onboarding script
 
-The onboarding script in `devops/` checks, and reports each result as passed
-or failed:
+The onboarding script in `devops/` checks, and reports each result as passed,
+failed, or skipped:
 
 - required packages are installed: Terraform at the pinned minimum version,
   and the other tools the script and Terraform use;
@@ -175,12 +180,28 @@ or failed:
 - the Global API Key and account email are accepted by the Cloudflare API; and
 - the R2 access key pair can list the `dd-terraform-state` bucket.
 
-The script:
+In guided mode, the script walks through each failed check:
 
-- never creates, changes, or deletes anything locally or in Cloudflare;
+- a missing package: it offers the install command from the setup guide, such
+  as `sudo apt install shellcheck`, and runs it only after Yes;
+- a missing or unsafe credential file: it offers to create the folder with
+  mode `700` and the file with mode `600`;
+- a missing value: it explains where to find the value, then asks for it with
+  hidden input and writes it to the credential file;
+- a rejected Cloudflare or R2 check: it shows the dashboard step from the setup
+  guide and asks whether the step is done.
+
+After each fix or confirmation, the script checks that item again. A Yes is
+never accepted as proof on its own.
+
+In both modes, the script:
+
+- treats an empty answer as No;
+- never changes anything in Cloudflare;
+- never overwrites an existing credential value without asking;
 - never prints credential values or passes them in command-line arguments
   visible to other users;
-- exits with a non-zero status when any check fails; and
+- exits with a non-zero status when any check still fails; and
 - can be run again at any time.
 
 `devops/README.md` explains how to run the script and links to
@@ -211,12 +232,29 @@ Write these checks before the implementation and confirm they fail first:
 - No credentials, keys, or state files are present in tracked files.
 - `.gitignore` excludes `.terraform/` and `*.tfstate*`, and does not exclude
   `.terraform.lock.hcl`.
+- The onboarding script exists in `devops/` and is executable.
 - The onboarding script passes ShellCheck.
 - The onboarding script fails, with a clear message and a non-zero exit
   status, when Terraform is missing or too old, the credential file is
   missing or readable by others, a required value is missing, or the
   Cloudflare or R2 credentials are rejected.
 - The onboarding script output never contains credential values.
+- With `--check`, or without a terminal, the onboarding script never prompts
+  and changes nothing.
+- In guided mode, an empty answer or No runs no command and changes no file.
+- In guided mode, an install command runs only after Yes.
+- In guided mode, a value entered for a missing credential is written to the
+  credential file, is not shown on screen, and the file stays at mode `600`.
+- In guided mode, the script explains where to find each value before asking
+  for it.
+- In guided mode, after Yes to a dashboard step, the script checks that item
+  again rather than accepting the answer.
+
+Every check above is kept as a test in `tests/FR-00000/`, named after the
+check it proves. Tests of the onboarding script's failure cases use stand-in
+programs and temporary credential files, so they need no network access and no
+real credentials. Tests that need Cloudflare or R2 access are recorded as
+blocked, not passed, until the manual prerequisites are complete.
 
 The exact commands are added to `AGENTS.md` during implementation.
 

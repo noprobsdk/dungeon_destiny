@@ -48,12 +48,12 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashi
 sudo apt update && sudo apt install terraform
 ```
 
-### 2. Install ShellCheck
+### 2. Install ShellCheck and jq
 
 Working directory: any.
 
 ```bash
-sudo apt install shellcheck
+sudo apt install shellcheck jq
 ```
 
 ### 3. Add R2 to the account
@@ -132,6 +132,7 @@ Working directory: any.
 ```bash
 terraform version
 shellcheck --version
+jq --version
 ls -l ~/.config/dungeon-destiny/cloudflare.env
 ```
 
@@ -139,6 +140,7 @@ Expected results:
 
 - Terraform is version 1.11 or later.
 - ShellCheck prints its version.
+- jq prints its version.
 - The credential file line starts with `-rw-------`.
 
 Check that every value is set, without printing any value:

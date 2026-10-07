@@ -22,6 +22,11 @@ build/
 coverage/
 *.tsbuildinfo
 
+# Terraform (crash logs are covered by *.log; .terraform.lock.hcl stays tracked)
+.terraform/
+*.tfstate
+*.tfstate.*
+
 # Godot
 .godot/
 android/build/

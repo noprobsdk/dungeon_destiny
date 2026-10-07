@@ -87,6 +87,11 @@ any exclusions. Not every Feature Request requires every category.
 Regression tests protect previously working behaviour and may
 belong to any of these categories.
 
+Tests are kept in `tests/`, with one folder per Feature Request named
+`tests/FR-<number>/`, for example `tests/FR-00000/`. Each test is named after
+the Feature Request check it proves, so every result can be traced back to its
+Feature Request.
+
 For each required test, the Feature Request records:
 
 - The acceptance criterion it verifies.
