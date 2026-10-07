@@ -12,4 +12,6 @@ The objective is a validated asset family in which compatible humanoids share a 
 - [Fallback strategies](04-fallback-strategies.md)
 - [Validation gates](validation/README.md)
 
-Binary authoring files remain in the approved external asset archive. Documentation records contracts, status, evidence, and decisions; Content Studio records approved runtime asset metadata.
+All 3D files, from source files to runtime GLBs and test evidence, are saved in the 3D asset store, with a version and a checksum for every file. The 3D pipeline is AI-based: AI tools produce or process the files, and every file they produce is saved there. Which AI tools are used, for which steps, and how they relate to Blender and the 3D contracts are not yet decided. See [DD-018](../12-decisions/decision-log.md) and the [delivery pipeline](../08-technical/service-architecture/delivery-pipeline.md#3d-assets).
+
+Documentation records contracts, status, evidence, and decisions; Content Studio records approved runtime asset metadata.

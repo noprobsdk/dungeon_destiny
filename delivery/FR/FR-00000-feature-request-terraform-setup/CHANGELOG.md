@@ -2,6 +2,15 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-07: FR-00001 may start at Pending documentation
+
+- **Change:** FR-00001 now depends on this Feature Request reaching
+  `Pending documentation` instead of `Complete`.
+- **Reason:** The project owner decided that FR-00001 may start once this
+  implementation is accepted, while the as-built documentation is paused.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals.
+
 ## 2026-10-07: Accepted, moved to Pending documentation
 
 - **Change:** The project owner accepted the implementation against the

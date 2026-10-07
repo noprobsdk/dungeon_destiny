@@ -78,7 +78,18 @@ doc/
 │   ├── runtime-manifest.md
 │   ├── runtime-responsibilities.md
 │   ├── runtime-state-and-persistence.md
-│   └── service-architecture.md
+│   ├── service-architecture.md
+│   └── service-architecture/
+│       ├── deployment-model.md
+│       ├── technology.md
+│       ├── frontends.md
+│       ├── delivery-pipeline.md
+│       ├── access-and-edge.md
+│       ├── application-services.md
+│       ├── game-runtime.md
+│       ├── data-services.md
+│       ├── operations.md
+│       └── game-server-platform.md
 ├── 09-content-studio/
 │   ├── README.md
 │   └── dungeon-levels/

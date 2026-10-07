@@ -1,6 +1,13 @@
 # Content Studio
 
-Content Studio is the internal authoring application used to manage Dungeon Destiny's database records.
+Content Studio is the internal administration tool for all of Dungeon Destiny's game metadata in the database: the configuration and content records the game runs on, not player data.
+
+Its most important areas are:
+
+- the 3D model assets for Heroes, enemies, and Equipment; and
+- Hero level management: the level rules for all Heroes, such as the XP each Hero Level needs, what each level unlocks, and the Hero Level that Equipment requires.
+
+It also manages the other game metadata, such as Dungeon Levels, Traits, Quests, and Campaign Arcs.
 
 It provides the UI and authoring workflows for creating, viewing, editing, validating, testing, reviewing, approving, and publishing concrete configurations.
 

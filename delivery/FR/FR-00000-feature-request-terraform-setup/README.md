@@ -36,7 +36,8 @@ helps fix what is missing.
 11. Complete `implementation_report.md` and move to `In Review`.
 12. After acceptance, hand over to documentation and as-built.
 
-FR-00001 depends on this Feature Request being complete.
+FR-00001 depends on this Feature Request reaching `Pending documentation`: its
+implementation accepted, with only the as-built documentation outstanding.
 
 ## 3. Scope boundaries
 
