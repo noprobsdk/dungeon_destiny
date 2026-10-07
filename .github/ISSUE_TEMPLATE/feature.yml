@@ -1,6 +1,6 @@
 name: Feature Request
 description: Track one Feature Request kept under delivery/.
-title: "[FR-00000] "
+title: "FR-00000-feature-request-<name>"
 labels:
   - feature
 body:
