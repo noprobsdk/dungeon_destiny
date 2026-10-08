@@ -1,6 +1,6 @@
 # FR-00001: Worker dev workflow
 
-- **Status:** In Progress
+- **Status:** In Review
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** No GitHub Issue yet.

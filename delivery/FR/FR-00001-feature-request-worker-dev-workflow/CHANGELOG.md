@@ -2,6 +2,20 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-08: Implemented, moved to In Review
+
+- **Change:** Implemented FR-00001: the pnpm workspace, the contracts package,
+  the `gateway` Worker with `/health`, the `dd-dev-gateway` Worker created by
+  Terraform and deployed by Wrangler, the extended onboarding script, the
+  `AGENTS.md` commands, and step 9 of the setup guide. Added
+  `implementation_report.md` and moved the status to `In Review`.
+- **Reason:** Steps 2 to 9 of the implementation sequence are complete. Every
+  Section 16 check passed, also from a clean clone of `c0acb7b`.
+- **Affected files:** `README.md`, `implementation_report.md`, `CHANGELOG.md`.
+- **Verification:** All three files match their approved proposals. The
+  implementation decisions and findings are recorded in
+  `implementation_report.md`.
+
 ## 2026-10-07: Moved to In Progress
 
 - **Change:** Set the design baseline commit to `831eba7`, removed the last
