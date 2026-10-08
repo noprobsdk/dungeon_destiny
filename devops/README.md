@@ -6,8 +6,10 @@ infrastructure tooling.
 ## Onboarding script
 
 `onboarding.sh` checks that this machine has the packages and access needed to
-run Terraform for Dungeon Destiny. It was added by
-[FR-00000](../delivery/FR/FR-00000-feature-request-terraform-setup/README.md).
+run Terraform and build the Workers for Dungeon Destiny. It was added by
+[FR-00000](../delivery/FR/FR-00000-feature-request-terraform-setup/README.md)
+and extended for Node.js and pnpm by
+[FR-00001](../delivery/FR/FR-00001-feature-request-worker-dev-workflow/README.md).
 
 The manual setup steps, such as creating the R2 bucket and finding each
 credential value, are in
@@ -25,7 +27,11 @@ devops/onboarding.sh
 In a terminal the script is guided. For each failed check it explains the fix
 and asks before doing anything:
 
-- a missing package: it offers the install command and runs it after `y`;
+- a missing package: it offers the install command and runs it after `y`.
+  Node.js 24 comes from NodeSource's apt repository, and pnpm from its
+  standalone installer in your home folder, without `sudo`. After installing
+  pnpm, open a new terminal or run `source ~/.bashrc`;
+- missing project dependencies: it offers `pnpm install --frozen-lockfile`;
 - a missing or unsafe credential file: it offers to create it with safe
   permissions;
 - a missing value: it explains where to find the value, then reads it at its
@@ -48,6 +54,8 @@ Without a terminal, for example in automation, the script also only checks.
 
 - jq, Terraform 1.11 or later, curl 7.75 or later, ShellCheck, and git are
   installed.
+- Node.js 24 and the pnpm version pinned in `package.json` are installed, and
+  the project dependencies are installed.
 - `~/.config/dungeon-destiny/cloudflare.env` exists, only its owner can read
   it, and it sets `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_KEY`,
   `CLOUDFLARE_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`.
@@ -60,10 +68,12 @@ Cloudflare.
 
 ### Tests
 
-The script's tests are in `tests/FR-00000/onboarding_test.sh`. They use
-stand-in programs and a temporary home folder, so they need no network access,
-install nothing, and use no real credentials:
+The script's tests are in `tests/FR-00000/onboarding_test.sh` and
+`tests/FR-00001/onboarding_node_test.sh`. They use stand-in programs and a
+temporary home folder, so they need no network access, install nothing, and use
+no real credentials:
 
 ```bash
 tests/FR-00000/onboarding_test.sh
+tests/FR-00001/onboarding_node_test.sh
 ```

@@ -25,15 +25,16 @@ devops/onboarding.sh --check
 
 The manual setup steps are in `doc/howto-cloudflare-setup.md`.
 
-### Terraform (FR-00000)
+### Terraform (FR-00000, FR-00001)
 
-Load the credentials and the R2 address into the current shell, then run
-Terraform for the `dev` environment. Never print the credential values, and do
-not set `TF_LOG` when output is shared.
+Load the credentials, the R2 address, and the account ID variable into the
+current shell, then run Terraform for the `dev` environment. Never print the
+credential values, and do not set `TF_LOG` when output is shared.
 
 ```bash
 source ~/.config/dungeon-destiny/cloudflare.env
 export AWS_ENDPOINT_URL_S3="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+export TF_VAR_cloudflare_account_id="$CLOUDFLARE_ACCOUNT_ID"
 terraform -chdir=infra/terraform/envs/dev init
 terraform -chdir=infra/terraform/envs/dev plan
 terraform -chdir=infra/terraform/envs/dev apply
@@ -42,17 +43,55 @@ terraform fmt -recursive infra/terraform
 
 `apply` changes real Cloudflare infrastructure and needs explicit approval.
 
-### Tests and lint (FR-00000)
+### Workers (FR-00001)
+
+The Workers use Node.js 24 and pnpm, pinned in `.node-version` and
+`package.json`. Install the dependencies, then test, type-check, and run the
+`gateway` Worker locally at `http://127.0.0.1:8787`.
+
+```bash
+pnpm install --frozen-lockfile
+pnpm test
+pnpm run typecheck
+pnpm --filter @dungeon-destiny/gateway run dev
+```
+
+After changing `apps/gateway/wrangler.jsonc`, regenerate the Worker types:
+
+```bash
+pnpm --filter @dungeon-destiny/gateway run types
+```
+
+Deploy the `gateway` code to `dd-dev-gateway` with a `dev-YYYYMMDD-HHMMSS`
+tag. The Worker itself is created by Terraform. A deploy changes the live
+Worker and needs explicit approval.
+
+```bash
+source ~/.config/dungeon-destiny/cloudflare.env
+pnpm --filter @dungeon-destiny/gateway run deploy:dev
+```
+
+### Tests and lint (FR-00000, FR-00001)
 
 ```bash
 tests/FR-00000/onboarding_test.sh
 tests/FR-00000/terraform_test.sh
-shellcheck devops/onboarding.sh tests/FR-00000/*.sh
+tests/FR-00001/onboarding_node_test.sh
+tests/FR-00001/workspace_test.sh
+tests/FR-00001/typecheck_test.sh
+tests/FR-00001/terraform_guard_test.sh
+tests/FR-00001/terraform_worker_test.sh
+tests/FR-00001/deployed_test.sh
+pnpm test
+shellcheck devops/onboarding.sh tests/FR-0000*/*.sh
 ```
 
-`onboarding_test.sh` needs no network or credentials. `terraform_test.sh` runs
-`init`, `plan`, `apply`, and a lock test against the R2 state bucket; it
-creates no Cloudflare resources.
+The onboarding, workspace, typecheck, guard, and Worker Terraform tests need no
+credentials and change nothing. `tests/FR-00000/terraform_test.sh` runs `init`,
+`plan`, and a lock test against the R2 state bucket, and runs `apply` only when
+`plan` reports no changes, so it never creates resources. `deployed_test.sh`
+calls the deployed `dd-dev-gateway` and changes nothing. `pnpm test` runs the
+Worker tests in the Workers runtime.
 
 ## Conventions
 

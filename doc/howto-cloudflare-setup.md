@@ -3,7 +3,8 @@
 ## Purpose
 
 Prepare a WSL machine and the Cloudflare account so that Terraform can manage
-Dungeon Destiny's Cloudflare infrastructure with its state in R2.
+Dungeon Destiny's Cloudflare infrastructure with its state in R2, and so that
+the Workers can be built, tested, and deployed.
 
 This guide is the main source for these steps. [FR-00000](../delivery/FR/FR-00000-feature-request-terraform-setup/README.md)
 implements and verifies it, and `devops/README.md` links here.
@@ -38,7 +39,7 @@ Cloudflare resources other than the state bucket.
 Cloudflare dashboard labels below are taken from Cloudflare's documentation
 and may change.
 
-The guided onboarding script can do steps 1, 2, and 8 for you, explains where
+The guided onboarding script can do steps 1, 2, 8, and 9 for you, explains where
 to find each value, and checks every step. Run it from the repository root, and
 see [`devops/README.md`](../devops/README.md):
 
@@ -135,6 +136,27 @@ The Cloudflare Terraform provider reads `CLOUDFLARE_EMAIL` and
 `CLOUDFLARE_ACCOUNT_ID` supplies the R2 endpoint
 `https://<account ID>.r2.cloudflarestorage.com`.
 
+### 9. Install Node.js 24, pnpm, and the project dependencies
+
+Working directory: the repository root. Node.js 24 comes from NodeSource's apt
+repository; pnpm comes from its standalone installer in your home folder, at
+the version pinned in `package.json`, and needs no `sudo`.
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_24.x -o nodesource_setup.sh
+sudo -E bash nodesource_setup.sh
+sudo apt-get install -y nodejs
+rm nodesource_setup.sh
+curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="$(jq -r '.packageManager' package.json | sed 's/^pnpm@//')" sh -
+```
+
+Open a new terminal, or run `source ~/.bashrc`, so that the terminal finds
+pnpm. Then install the project dependencies from the repository root:
+
+```bash
+pnpm install --frozen-lockfile
+```
+
 ## Verification
 
 Working directory: any.
@@ -143,6 +165,8 @@ Working directory: any.
 terraform version
 shellcheck --version
 jq --version
+node --version
+pnpm --version
 ls -l ~/.config/dungeon-destiny/cloudflare.env
 ```
 
@@ -151,6 +175,8 @@ Expected results:
 - Terraform is version 1.11 or later.
 - ShellCheck prints its version.
 - jq prints its version.
+- Node.js prints a version starting with `v24.`.
+- pnpm prints the version pinned in `package.json`.
 - The credential file line starts with `-rw-------`.
 
 Check that every value is set, without printing any value:
@@ -208,3 +234,5 @@ Expected result: the last line reads `0 failed`.
 - [Cloudflare API keys](https://developers.cloudflare.com/fundamentals/api/get-started/keys/)
 - [Find account IDs](https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/)
 - [Terraform remote backend on R2](https://developers.cloudflare.com/terraform/advanced-topics/remote-backend/)
+- [NodeSource Node.js installation](https://github.com/nodesource/distributions/blob/master/DEV_README.md)
+- [pnpm installation](https://pnpm.io/installation)
