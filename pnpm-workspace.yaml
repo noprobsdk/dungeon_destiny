@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# FR-00001: packages allowed to run install scripts. Both download their
+# platform binary: esbuild (Vite's compiler) and workerd (the Workers runtime
+# used by Wrangler and the tests).
+allowBuilds:
+  esbuild: true
+  workerd: true

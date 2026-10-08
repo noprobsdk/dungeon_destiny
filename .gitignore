@@ -16,6 +16,7 @@ Desktop.ini
 
 # JavaScript / TypeScript
 node_modules/
+.wrangler/
 .next/
 dist/
 build/

@@ -1,0 +1,22 @@
+// FR-00001: the gateway Worker (DD-017). Terraform creates the Worker and its
+// workers.dev address; Wrangler uploads code versions to it.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-07",
+  "env": {
+    "dev": {
+      "name": "dd-dev-gateway",
+      // Must match Terraform: subdomain.enabled = true, previews_enabled = false.
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": {
+        "ENVIRONMENT": "dev"
+      },
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      }
+    }
+  }
+}

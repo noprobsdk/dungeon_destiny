@@ -119,8 +119,17 @@ exit 0
 STUB
   printf '#!/usr/bin/env bash\nexit 0\n' >"$FAKEBIN/wget"
   printf '#!/usr/bin/env bash\necho amd64\n' >"$FAKEBIN/dpkg"
+  # Stand-ins for Node.js 24 and pnpm (FR-00001), so these tests see a
+  # machine where they are already installed.
+  printf '#!/usr/bin/env bash\necho v24.21.0\n' >"$FAKEBIN/node"
+  printf '#!/usr/bin/env bash\necho 12.10.1\n' >"$FAKEBIN/pnpm"
   chmod +x "$FAKEBIN"/*
   cp "$FAKEBIN/terraform" "$FAKEBIN/jq" "$FAKEBIN/shellcheck" "$FAKEBIN/git" "$AVAILABLE/"
+  # Run a copy of the script in a fake repository without a pnpm workspace, so
+  # the result does not depend on the real checkout's installed dependencies.
+  mkdir -p "$WORK/repo/devops"
+  cp "$SCRIPT" "$WORK/repo/devops/onboarding.sh"
+  RUN_SCRIPT="$WORK/repo/devops/onboarding.sh"
 }
 
 teardown() {
@@ -143,13 +152,13 @@ EOF
 
 # Run the onboarding script in the isolated environment, without a terminal.
 run_script() {
-  OUTPUT="$(PATH="$FAKEBIN:$SYSBIN" "$SYSBIN/bash" "$SCRIPT" "$@" </dev/null 2>&1)"
+  OUTPUT="$(PATH="$FAKEBIN:$SYSBIN" "$SYSBIN/bash" "$RUN_SCRIPT" "$@" </dev/null 2>&1)"
   STATUS=$?
 }
 
 # Run the onboarding script in guided mode, feeding one answer per line.
 run_guided() {
-  OUTPUT="$(printf '%b' "$1" | PATH="$FAKEBIN:$SYSBIN" "$SYSBIN/bash" "$SCRIPT" --guided 2>&1)"
+  OUTPUT="$(printf '%b' "$1" | PATH="$FAKEBIN:$SYSBIN" "$SYSBIN/bash" "$RUN_SCRIPT" --guided 2>&1)"
   STATUS=$?
 }
 

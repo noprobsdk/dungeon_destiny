@@ -183,8 +183,23 @@ test_plan_no_changes() {
 
 test_apply_writes_state() {
   local name="FR-00000: terraform apply completes with no changes and the state exists in R2 at $STATE_KEY"
-  local output
+  local output plan_status
   r2_ready "$name" || return
+  # Guard (FR-00001): apply only when plan reports no changes, so this test
+  # never creates or changes resources added by a later Feature Request.
+  output="$(tf plan -input=false -detailed-exitcode 2>&1)"
+  plan_status=$?
+  if [ "$plan_status" -eq 2 ]; then
+    if r2_list "$STATE_KEY" | grep -qx "$STATE_KEY"; then
+      pass "$name (apply skipped: plan has changes)"
+    else
+      fail "$name" "The state object $STATE_KEY was not found in the $STATE_BUCKET bucket."
+    fi
+    return
+  elif [ "$plan_status" -ne 0 ]; then
+    fail "$name" "terraform plan failed: $(mask "$output")"
+    return
+  fi
   if ! output="$(tf apply -input=false -auto-approve 2>&1)"; then
     fail "$name" "$(mask "$output")"
   elif ! printf '%s\n' "$output" | grep -q 'Resources: 0 added, 0 changed, 0 destroyed'; then

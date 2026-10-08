@@ -18,6 +18,16 @@ set -u
 
 readonly MIN_TERRAFORM="1.11.0"
 readonly MIN_CURL="7.75.0"
+readonly NODE_MAJOR="24"
+# pnpm's standalone installer uses this folder. pnpm 12 puts the pnpm command
+# in its bin folder; older installers put it in the folder itself.
+readonly PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+add_pnpm_to_path() {
+  [ -x "$PNPM_HOME/pnpm" ] && PATH="$PNPM_HOME:$PATH"
+  [ -x "$PNPM_HOME/bin/pnpm" ] && PATH="$PNPM_HOME/bin:$PATH"
+  export PATH
+}
+add_pnpm_to_path
 readonly STATE_BUCKET="dd-terraform-state"
 readonly CRED_DIR="$HOME/.config/dungeon-destiny"
 readonly CRED_FILE="$CRED_DIR/cloudflare.env"
@@ -219,6 +229,98 @@ check_git() {
 }
 fix_git() { install_package git; }
 
+# --- Node.js, pnpm, and project dependencies (FR-00001) --------------------
+
+# The pnpm version pinned in the workspace's package.json, or nothing when
+# there is no workspace yet.
+pinned_pnpm() {
+  [ -f "$REPO_ROOT/package.json" ] && has jq || return 0
+  jq -r '.packageManager // empty' "$REPO_ROOT/package.json" 2>/dev/null | sed 's/^pnpm@//'
+}
+
+check_node() {
+  if ! has node; then
+    MSG="Node.js is not installed"
+    HINT="install Node.js $NODE_MAJOR (see $GUIDE)"
+    return 1
+  fi
+  local version
+  version="$(node --version 2>/dev/null)"
+  if [ "${version%%.*}" = "v$NODE_MAJOR" ]; then
+    MSG="Node.js $NODE_MAJOR is installed ($version)"
+    return 0
+  fi
+  MSG="Node.js ${version:-unknown} is installed, but version $NODE_MAJOR is required"
+  HINT="install Node.js $NODE_MAJOR (see $GUIDE)"
+  return 1
+}
+
+fix_node() {
+  echo "      This adds NodeSource's apt repository for Node.js $NODE_MAJOR and installs it."
+  ask "      Install Node.js $NODE_MAJOR now?" || return 1
+  local setup
+  setup="$(mktemp "${TMPDIR:-/tmp}/nodesource_setup.XXXXXX")" || return 1
+  curl -fsSL "https://deb.nodesource.com/setup_$NODE_MAJOR.x" -o "$setup" &&
+    sudo -E bash "$setup" &&
+    sudo apt-get install -y nodejs
+  local result=$?
+  rm -f "$setup"
+  return "$result"
+}
+
+check_pnpm() {
+  local pin version
+  pin="$(pinned_pnpm)"
+  if ! has pnpm; then
+    MSG="pnpm is not installed"
+    HINT="install pnpm ${pin:-} with its standalone installer (see $GUIDE)"
+    return 1
+  fi
+  version="$(pnpm --version 2>/dev/null)"
+  if [ -z "$pin" ] || [ "$version" = "$pin" ]; then
+    MSG="pnpm $version is installed${pin:+ (pinned $pin)}"
+    return 0
+  fi
+  MSG="pnpm $version is installed, but the workspace pins $pin"
+  HINT="install pnpm $pin with its standalone installer (see $GUIDE)"
+  return 1
+}
+
+fix_pnpm() {
+  local pin
+  pin="$(pinned_pnpm)"
+  echo "      This runs pnpm's standalone installer in your home folder. It needs no sudo."
+  ask "      Install pnpm ${pin:-(latest)} now?" || return 1
+  if [ -n "$pin" ]; then
+    curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="$pin" sh -
+  else
+    curl -fsSL https://get.pnpm.io/install.sh | sh -
+  fi
+  add_pnpm_to_path
+  echo "      Terminals that are already open cannot find pnpm yet. Open a new"
+  echo "      terminal, or run 'source ~/.bashrc', before using pnpm."
+}
+
+check_dependencies() {
+  if [ ! -f "$REPO_ROOT/package.json" ]; then
+    MSG="project dependencies not checked: there is no pnpm workspace yet"
+    return 2
+  fi
+  if [ -f "$REPO_ROOT/node_modules/.modules.yaml" ]; then
+    MSG="project dependencies are installed"
+    return 0
+  fi
+  MSG="project dependencies are not installed"
+  HINT="run 'pnpm install --frozen-lockfile' in $REPO_ROOT"
+  return 1
+}
+
+fix_dependencies() {
+  has pnpm || return 1
+  ask "      Install the project dependencies with 'pnpm install --frozen-lockfile'?" || return 1
+  (cd "$REPO_ROOT" && pnpm install --frozen-lockfile)
+}
+
 # --- Credential file and values ----------------------------------------------
 
 check_credential_file() {
@@ -408,6 +510,9 @@ run check_terraform fix_terraform
 run check_curl fix_curl
 run check_shellcheck fix_shellcheck
 run check_git fix_git
+run check_node fix_node
+run check_pnpm fix_pnpm
+run check_dependencies fix_dependencies
 run check_credential_file fix_credential_file
 for var in "${REQUIRED_VARS[@]}"; do
   run check_value fix_value "$var"

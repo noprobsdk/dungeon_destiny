@@ -2,6 +2,14 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-07: Moved to In Progress
+
+- **Change:** Set the design baseline commit to `831eba7`, removed the last
+  blocker, and moved the status through `Backlog` to `In Progress`.
+- **Reason:** DD-019 and the related architecture change were committed.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals.
+
 ## 2026-10-07: Feature Request created
 
 - **Change:** Created `README.md` with status `In Specification`. It delivers

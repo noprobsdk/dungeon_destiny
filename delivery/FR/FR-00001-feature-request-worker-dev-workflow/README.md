@@ -1,6 +1,6 @@
 # FR-00001: Worker dev workflow
 
-- **Status:** In Specification
+- **Status:** In Progress
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** No GitHub Issue yet.
@@ -75,8 +75,7 @@ This Feature Request does not create or change:
   Terraform setup and onboarding script this Feature Request extends.
 - [`doc/test-driven-development.md`](../../../doc/test-driven-development.md).
 
-Design baseline commit: not yet set. DD-019 and the related architecture change
-are not yet committed; the baseline is the commit that contains them.
+Design baseline commit: `831eba7`.
 
 Source-document readiness gate: passes for this scope. The open technical
 decisions in the service architecture concern identity details, sessions,
@@ -97,10 +96,7 @@ servers, and the 3D pipeline, which this Feature Request does not use.
 - Node.js 24 and pnpm are installed, with help from the extended onboarding
   script.
 
-Blockers:
-
-- DD-019 and the related architecture change committed, so the design baseline
-  can be set.
+Blockers: none.
 
 ## 7. Approved decisions
 

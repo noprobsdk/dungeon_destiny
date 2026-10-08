@@ -1,0 +1,13 @@
+{
+  "name": "@dungeon-destiny/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "wrangler types --env dev",
+    "dev": "wrangler dev --env dev"
+  },
+  "dependencies": {
+    "@dungeon-destiny/contracts": "workspace:*"
+  }
+}
