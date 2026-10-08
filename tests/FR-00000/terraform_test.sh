@@ -41,6 +41,8 @@ if [ -f "$CRED_FILE" ]; then
   source "$CRED_FILE" && creds_loaded=true
   if [ "$creds_loaded" = true ]; then
     export AWS_ENDPOINT_URL_S3="https://${CLOUDFLARE_ACCOUNT_ID:-}.r2.cloudflarestorage.com"
+    # FR-00001: the account ID variable used by the Worker resources.
+    export TF_VAR_cloudflare_account_id="${CLOUDFLARE_ACCOUNT_ID:-}"
   fi
 fi
 

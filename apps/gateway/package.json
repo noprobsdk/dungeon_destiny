@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "types": "wrangler types --env dev",
-    "dev": "wrangler dev --env dev"
+    "dev": "wrangler dev --env dev",
+    "deploy:dev": "wrangler deploy --env dev --tag \"dev-$(date -u +%Y%m%d-%H%M%S)\""
   },
   "dependencies": {
     "@dungeon-destiny/contracts": "workspace:*"
