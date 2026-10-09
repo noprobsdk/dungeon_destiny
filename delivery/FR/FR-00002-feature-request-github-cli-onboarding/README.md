@@ -1,6 +1,6 @@
 # FR-00002: GitHub CLI onboarding
 
-- **Status:** In Review
+- **Status:** Pending documentation
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** No GitHub Issue yet.
