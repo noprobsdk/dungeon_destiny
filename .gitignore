@@ -21,6 +21,9 @@ node_modules/
 dist/
 build/
 coverage/
+# FR-00003: Playwright results and reports
+test-results/
+playwright-report/
 *.tsbuildinfo
 
 # Terraform (crash logs are covered by *.log; .terraform.lock.hcl stays tracked)

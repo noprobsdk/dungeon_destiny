@@ -13,10 +13,11 @@ Content Studio, database, and Godot implementation.
 Setup, run, test, lint, and format commands are added here by the Feature
 Request that introduces them. Run every command from the repository root.
 
-### Onboarding (FR-00000)
+### Onboarding (FR-00000, FR-00001, FR-00002, FR-00003)
 
-Check that this machine can run Terraform. In a terminal the script is guided
-and asks before changing anything; `--check` only reads. Agents use `--check`.
+Check that this machine can run Terraform, build and test the Workers, and
+deploy Content Studio. In a terminal the script is guided and asks before
+changing anything; `--check` only reads. Agents use `--check`.
 
 ```bash
 devops/onboarding.sh
@@ -25,16 +26,18 @@ devops/onboarding.sh --check
 
 The manual setup steps are in `doc/howto-cloudflare-setup.md`.
 
-### Terraform (FR-00000, FR-00001)
+### Terraform (FR-00000, FR-00001, FR-00003)
 
-Load the credentials, the R2 address, and the account ID variable into the
+Load the credentials, the R2 address, and the Terraform variables into the
 current shell, then run Terraform for the `dev` environment. Never print the
-credential values, and do not set `TF_LOG` when output is shared.
+credential values or the SuperAdmin email address, and do not set `TF_LOG`
+when output is shared.
 
 ```bash
 source ~/.config/dungeon-destiny/cloudflare.env
 export AWS_ENDPOINT_URL_S3="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
 export TF_VAR_cloudflare_account_id="$CLOUDFLARE_ACCOUNT_ID"
+export TF_VAR_studio_superadmin_email="$STUDIO_SUPERADMIN_EMAIL"
 terraform -chdir=infra/terraform/envs/dev init
 terraform -chdir=infra/terraform/envs/dev plan
 terraform -chdir=infra/terraform/envs/dev apply
@@ -71,6 +74,43 @@ source ~/.config/dungeon-destiny/cloudflare.env
 pnpm --filter @dungeon-destiny/gateway run deploy:dev
 ```
 
+### Content Studio (FR-00003)
+
+Content Studio is the `studio-web` Worker (React pages and the Cloudflare
+Access token check) and the `studio-api` Worker (no public address, typed RPC).
+Terraform creates both Workers and the Access setup; after a change to the
+Access application, copy `terraform output -raw studio_web_access_aud` into
+`ACCESS_AUD` in `apps/studio-web/wrangler.jsonc`.
+
+After changing a Wrangler configuration, regenerate the Worker types:
+
+```bash
+pnpm --filter @dungeon-destiny/studio-api run types
+pnpm --filter @dungeon-destiny/studio-web run types
+```
+
+Deploy `studio-api` first, then `studio-web`. The `studio-api` deploy reads the
+SuperAdmin email address from the credential file, refuses to run without it,
+and masks it in the output. A deploy changes live Workers and needs explicit
+approval.
+
+```bash
+source ~/.config/dungeon-destiny/cloudflare.env
+pnpm --filter @dungeon-destiny/studio-api run deploy:dev
+pnpm --filter @dungeon-destiny/studio-web run deploy:dev
+```
+
+Signing in uses a one-time PIN sent to the owner's email. Agents cannot sign
+in; the owner checks sign-in by hand after a deploy that touches `studio-web`,
+Cloudflare Access, or the SuperAdmin.
+
+### Before and after a deploy (FR-00003)
+
+Before every deploy, for any Feature Request, run the whole local test suite
+below, including `pnpm run test:e2e`, and stop if anything fails. After every
+deploy, run the deployed tests and check that `terraform plan` reports no
+changes.
+
 ### GitHub CLI (FR-00002)
 
 The GitHub CLI (`gh`) works with the issues and pull requests of
@@ -85,7 +125,7 @@ Reading with `gh` needs no approval. Posting to GitHub is outward-facing and
 the repository is public: show every comment, issue, pull request, or status
 change to the owner and get approval before posting it.
 
-### Tests and lint (FR-00000, FR-00001, FR-00002)
+### Tests and lint (FR-00000, FR-00001, FR-00002, FR-00003)
 
 ```bash
 tests/FR-00000/onboarding_test.sh
@@ -97,8 +137,14 @@ tests/FR-00001/terraform_guard_test.sh
 tests/FR-00001/terraform_worker_test.sh
 tests/FR-00001/deployed_test.sh
 tests/FR-00002/onboarding_gh_test.sh
+tests/FR-00003/onboarding_access_test.sh
+tests/FR-00003/terraform_access_test.sh
+tests/FR-00003/deploy_script_test.sh
+tests/FR-00003/deployed_test.sh
 pnpm test
-shellcheck devops/onboarding.sh tests/FR-0000*/*.sh
+pnpm run typecheck
+pnpm run test:e2e
+shellcheck devops/*.sh tests/FR-0000*/*.sh
 ```
 
 The onboarding, workspace, typecheck, guard, and Worker Terraform tests need no
@@ -106,7 +152,12 @@ credentials and change nothing. `tests/FR-00000/terraform_test.sh` runs `init`,
 `plan`, and a lock test against the R2 state bucket, and runs `apply` only when
 `plan` reports no changes, so it never creates resources. `deployed_test.sh`
 calls the deployed `dd-dev-gateway` and changes nothing. `pnpm test` runs the
-Worker tests in the Workers runtime.
+Worker tests in the Workers runtime and the Content Studio page tests in
+jsdom. The FR-00003 onboarding, Terraform, and deploy-script tests need no
+credentials and change nothing; `tests/FR-00003/deployed_test.sh` calls the
+deployed Content Studio without signing in. `pnpm run test:e2e` runs both
+Content Studio Workers locally and tests them in Chromium, with tokens from a
+local stand-in for Access's key server; it needs no credentials.
 
 ## Conventions
 
