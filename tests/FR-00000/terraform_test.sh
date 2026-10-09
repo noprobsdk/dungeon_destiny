@@ -43,6 +43,8 @@ if [ -f "$CRED_FILE" ]; then
     export AWS_ENDPOINT_URL_S3="https://${CLOUDFLARE_ACCOUNT_ID:-}.r2.cloudflarestorage.com"
     # FR-00001: the account ID variable used by the Worker resources.
     export TF_VAR_cloudflare_account_id="${CLOUDFLARE_ACCOUNT_ID:-}"
+    # FR-00003: the Content Studio SuperAdmin email address.
+    export TF_VAR_studio_superadmin_email="${STUDIO_SUPERADMIN_EMAIL:-}"
   fi
 fi
 
@@ -50,7 +52,7 @@ fi
 mask() {
   local text="$1" value
   for value in "${CLOUDFLARE_EMAIL:-}" "${CLOUDFLARE_API_KEY:-}" "${CLOUDFLARE_ACCOUNT_ID:-}" \
-    "${AWS_ACCESS_KEY_ID:-}" "${AWS_SECRET_ACCESS_KEY:-}"; do
+    "${AWS_ACCESS_KEY_ID:-}" "${AWS_SECRET_ACCESS_KEY:-}" "${STUDIO_SUPERADMIN_EMAIL:-}"; do
     [ -n "$value" ] && text="${text//"$value"/***}"
   done
   printf '%s' "$text"
@@ -105,7 +107,7 @@ test_no_secrets_or_state_in_repository() {
   values="$(mktemp)"
   chmod 600 "$values"
   printf '%s\n' "${CLOUDFLARE_EMAIL:-}" "${CLOUDFLARE_API_KEY:-}" "${CLOUDFLARE_ACCOUNT_ID:-}" \
-    "${AWS_ACCESS_KEY_ID:-}" "${AWS_SECRET_ACCESS_KEY:-}" | grep -v '^$' >"$values"
+    "${AWS_ACCESS_KEY_ID:-}" "${AWS_SECRET_ACCESS_KEY:-}" "${STUDIO_SUPERADMIN_EMAIL:-}" | grep -v '^$' >"$values"
   hits="$(printf '%s\n' "$files" | while IFS= read -r f; do
     [ -f "$f" ] && grep -qF -f "$values" "$f" && echo "$f"
   done)"

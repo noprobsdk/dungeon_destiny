@@ -6,3 +6,13 @@ variable "cloudflare_account_id" {
   type        = string
   sensitive   = true
 }
+
+# FR-00003: the Content Studio SuperAdmin's email address. The repository is
+# public, so it is not stored here. It is read from
+# TF_VAR_studio_superadmin_email, which is set from STUDIO_SUPERADMIN_EMAIL in
+# the owner's credential file.
+variable "studio_superadmin_email" {
+  description = "Email address of the Content Studio SuperAdmin."
+  type        = string
+  sensitive   = true
+}

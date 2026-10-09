@@ -147,6 +147,29 @@ test_passes_when_superadmin_set_and_never_prints_it() {
   teardown
 }
 
+test_fails_when_superadmin_not_plain_email() {
+  local name="FR-00003: the onboarding script fails when STUDIO_SUPERADMIN_EMAIL is not a plain email address, without printing it"
+  local bad
+  for bad in $'super\xc2@example.invalid' 'superadmin@example.invalid ' 'not-an-email-address'; do
+    setup
+    remove_superadmin
+    printf 'export STUDIO_SUPERADMIN_EMAIL=%q\n' "$bad" >>"$HOME/.config/dungeon-destiny/cloudflare.env"
+    run_check
+    if [ "$STATUS" -eq 0 ] || ! printf '%s\n' "$OUTPUT" | grep -q '^FAIL.*STUDIO_SUPERADMIN_EMAIL.*plain email address'; then
+      fail "$name" "Expected a FAIL line for a malformed value. Output was:"$'\n'"$OUTPUT"
+      teardown
+      return
+    fi
+    if printf '%s\n' "$OUTPUT" | grep -qF "${bad%% *}"; then
+      fail "$name" "The malformed value appeared in the output."
+      teardown
+      return
+    fi
+    teardown
+  done
+  pass "$name"
+}
+
 test_fails_when_zero_trust_not_enabled() {
   local name="FR-00003: the onboarding script fails when Cloudflare Zero Trust is not turned on, and points to the setup guide"
   setup
@@ -247,6 +270,7 @@ echo
 
 test_fails_when_superadmin_missing
 test_passes_when_superadmin_set_and_never_prints_it
+test_fails_when_superadmin_not_plain_email
 test_fails_when_zero_trust_not_enabled
 test_passes_when_zero_trust_enabled
 test_guided_zero_trust_rechecks_and_changes_nothing

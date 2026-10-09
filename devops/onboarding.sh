@@ -477,11 +477,23 @@ enter_value() {
   store_value "$var"
 }
 
+# True when the value is a plain ASCII email address, with no spaces or hidden
+# characters. A hidden byte in an email address breaks pnpm and Terraform.
+is_plain_email() {
+  local LC_ALL=C
+  [[ "$1" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]
+}
+
 check_value() {
   local var="$1"
   if [ "$creds_loaded" != true ]; then
     MSG="$var not checked: the credential file is missing or unsafe"
     return 2
+  fi
+  if [ "$var" = "STUDIO_SUPERADMIN_EMAIL" ] && [ -n "${!var:-}" ] && ! is_plain_email "${!var}"; then
+    MSG="$var is not a plain email address (it may contain a space or a hidden character)"
+    HINT="retype the line in $CRED_FILE without copy and paste (see $GUIDE, step 8)"
+    return 1
   fi
   if [ -n "${!var:-}" ]; then
     MSG="$var is set"
