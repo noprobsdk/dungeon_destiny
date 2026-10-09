@@ -4,8 +4,9 @@
 
 Prepare a WSL machine and the Cloudflare account so that Terraform can manage
 Dungeon Destiny's Cloudflare infrastructure with its state in R2, and so that
-the Workers can be built, tested, and deployed, and the GitHub Issues that track
-Feature Requests can be managed with the GitHub CLI.
+the Workers can be built, tested, and deployed, the GitHub Issues that track
+Feature Requests can be managed with the GitHub CLI, and Content Studio can be
+protected by Cloudflare Access.
 
 This guide is the main source for these steps. [FR-00000](../delivery/FR/FR-00000-terraform-setup/README.md)
 implements and verifies it, and `devops/README.md` links here.
@@ -34,21 +35,23 @@ Cloudflare resources other than the state bucket.
 | Global API Key | Cloudflare dashboard, step 6. |
 | Account ID | Cloudflare dashboard, step 7. |
 | R2 Access Key ID and Secret Access Key | Cloudflare dashboard, step 5. |
+| SuperAdmin email address | The email address of the Content Studio SuperAdmin, chosen by the project owner (FR-00003). |
+| Zero Trust team name | Chosen by the project owner in step 11. |
 
 ## Procedure
 
 Cloudflare dashboard labels below are taken from Cloudflare's documentation
 and may change.
 
-The guided onboarding script can do steps 1, 2, 8, 9, and 10 for you, explains where
-to find each value, and checks every step. Run it from the repository root, and
+The guided onboarding script can do steps 1, 2, 8, 9, 10, and 12 for you,
+explains where to find each value, and checks every step. Run it from the repository root, and
 see [`devops/README.md`](../devops/README.md):
 
 ```bash
 devops/onboarding.sh
 ```
 
-The dashboard steps 3 to 7 are always done by hand.
+The dashboard steps 3 to 7 and 11 are always done by hand.
 
 ### 1. Install Terraform
 
@@ -129,13 +132,16 @@ export CLOUDFLARE_API_KEY="<Global API Key>"
 export CLOUDFLARE_ACCOUNT_ID="<account ID>"
 export AWS_ACCESS_KEY_ID="<R2 Access Key ID>"
 export AWS_SECRET_ACCESS_KEY="<R2 Secret Access Key>"
+export STUDIO_SUPERADMIN_EMAIL="<SuperAdmin email address>"
 ```
 
 The Cloudflare Terraform provider reads `CLOUDFLARE_EMAIL` and
 `CLOUDFLARE_API_KEY`. Terraform's S3 backend reads `AWS_ACCESS_KEY_ID` and
 `AWS_SECRET_ACCESS_KEY`; here they hold the R2 keys, not AWS keys.
 `CLOUDFLARE_ACCOUNT_ID` supplies the R2 endpoint
-`https://<account ID>.r2.cloudflarestorage.com`.
+`https://<account ID>.r2.cloudflarestorage.com`. `STUDIO_SUPERADMIN_EMAIL` is
+the Content Studio SuperAdmin, who can always sign in; it is kept here, never in
+the repository, because the repository is public.
 
 ### 9. Install Node.js 24, pnpm, and the project dependencies
 
@@ -178,6 +184,33 @@ Choose **GitHub.com**, then **SSH**, then **Login with a web browser**, and
 enter the one-time code it shows on github.com. `gh` stores the sign-in in your
 home folder, never in this repository.
 
+### 11. Turn on Cloudflare Zero Trust
+
+Cloudflare Access, which protects Content Studio, is part of Cloudflare Zero
+Trust. Turn it on once for the account. Two-factor authentication on the
+Cloudflare account is recommended first.
+
+1. In the Cloudflare dashboard, select **Zero Trust**.
+2. Choose a team name. It becomes your sign-in address,
+   `<team name>.cloudflareaccess.com`, and can be found later under
+   **Zero Trust** > **Settings**. It is not a secret.
+3. Choose the **Zero Trust Free** plan. Cloudflare asks for payment details
+   even for the free plan, but does not charge for it. The free plan covers up
+   to 50 users.
+
+Terraform creates the Access application, its policy, and the one-time PIN
+sign-in method. Do not create them in the dashboard.
+
+### 12. Install Playwright's Chromium
+
+Working directory: the repository root. The end-to-end tests run in Chromium.
+This downloads it into your home folder and installs the system libraries it
+needs with `sudo`:
+
+```bash
+pnpm exec playwright install --with-deps chromium
+```
+
 ## Verification
 
 Working directory: any.
@@ -201,21 +234,23 @@ Expected results:
 - pnpm prints the version pinned in `package.json`.
 - `gh auth status` reports that you are logged in to github.com. Do not share
   its output; it describes your account.
+- In the dashboard, **Zero Trust** > **Settings** shows your team name.
 - The credential file line starts with `-rw-------`.
 
 Check that every value is set, without printing any value:
 
 ```bash
-bash -c 'source ~/.config/dungeon-destiny/cloudflare.env; for v in CLOUDFLARE_EMAIL CLOUDFLARE_API_KEY CLOUDFLARE_ACCOUNT_ID AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do if [ -n "${!v}" ]; then echo "$v set"; else echo "$v MISSING"; fi; done'
+bash -c 'source ~/.config/dungeon-destiny/cloudflare.env; for v in CLOUDFLARE_EMAIL CLOUDFLARE_API_KEY CLOUDFLARE_ACCOUNT_ID AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY STUDIO_SUPERADMIN_EMAIL; do if [ -n "${!v}" ]; then echo "$v set"; else echo "$v MISSING"; fi; done'
 ```
 
-Expected result: five lines ending in `set`.
+Expected result: six lines ending in `set`.
 
 In the dashboard, `dd-terraform-state` is listed on the **R2 object storage**
 page, and the R2 API token is scoped to that bucket only.
 
-The onboarding script also checks that Cloudflare accepts the Global API Key and
-that the R2 access key pair can list the `dd-terraform-state` bucket. Working
+The onboarding script also checks that Cloudflare accepts the Global API Key,
+that the R2 access key pair can list the `dd-terraform-state` bucket, and that
+Zero Trust is turned on. Working
 directory: the repository root.
 
 ```bash
@@ -233,6 +268,14 @@ Expected result: the last line reads `0 failed`.
 - **Wrong file permissions:** run `chmod 600 ~/.config/dungeon-destiny/cloudflare.env`.
 - **A key may have been exposed:** stop, treat it as compromised, and replace
   it in the Cloudflare dashboard before continuing.
+- **Zero Trust not turned on:** repeat step 11; the onboarding script reports
+  HTTP 403 until it is done.
+- **The SuperAdmin cannot receive the one-time PIN:** this is the emergency
+  route. Sign in to the Cloudflare dashboard with your own Cloudflare account,
+  which does not use Access. Change `STUDIO_SUPERADMIN_EMAIL` in the credential
+  file to an address you can reach, then run `terraform apply` and redeploy
+  `studio-api`, as described in `AGENTS.md`. Do not change the Access policy in
+  the dashboard; Terraform would undo it.
 
 ## Security
 
@@ -244,6 +287,8 @@ Expected result: the last line reads `0 failed`.
 - Keep the credential directory at `700` and the file at `600`.
 - Do not enable Terraform debug logging (`TF_LOG`) when sharing output; it can
   expose credentials.
+- Keep the SuperAdmin email address only in the credential file; the
+  repository is public.
 
 ## References
 
@@ -258,6 +303,10 @@ Expected result: the last line reads `0 failed`.
 - [Cloudflare API keys](https://developers.cloudflare.com/fundamentals/api/get-started/keys/)
 - [Find account IDs](https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/)
 - [Terraform remote backend on R2](https://developers.cloudflare.com/terraform/advanced-topics/remote-backend/)
+- [FR-00003: Worker access policy](../delivery/FR/FR-00003-worker-access-policy/README.md)
+- [Cloudflare Zero Trust: get started](https://developers.cloudflare.com/cloudflare-one/setup/)
+- [Cloudflare Zero Trust plans](https://www.cloudflare.com/plans/zero-trust-services/)
+- [Playwright: install browsers](https://playwright.dev/docs/browsers)
 - [NodeSource Node.js installation](https://github.com/nodesource/distributions/blob/master/DEV_README.md)
 - [pnpm installation](https://pnpm.io/installation)
 - [GitHub CLI installation on Linux](https://github.com/cli/cli/blob/trunk/docs/install_linux.md)

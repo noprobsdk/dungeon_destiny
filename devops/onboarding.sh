@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# FR-00000 onboarding check.
+# FR-00000 onboarding check, extended by FR-00001, FR-00002, and FR-00003.
 #
 # Checks that this machine has the packages and access needed to run
-# Terraform for Dungeon Destiny.
+# Terraform, build and test the Workers, and deploy Content Studio for
+# Dungeon Destiny.
 #
 # Guided mode (the default in a terminal, or --guided) walks through each
 # failed check and asks Yes or No before running an install command, creating
@@ -34,7 +35,9 @@ readonly CRED_FILE="$CRED_DIR/cloudflare.env"
 # R2 requires the x-amz-content-sha256 header on signed requests, and curl
 # before 8.x does not add it. This is the SHA-256 of an empty request body.
 readonly EMPTY_BODY_SHA256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-readonly REQUIRED_VARS=(CLOUDFLARE_EMAIL CLOUDFLARE_API_KEY CLOUDFLARE_ACCOUNT_ID AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
+# STUDIO_SUPERADMIN_EMAIL (FR-00003) is the Content Studio SuperAdmin. It is kept
+# here because the repository is public.
+readonly REQUIRED_VARS=(CLOUDFLARE_EMAIL CLOUDFLARE_API_KEY CLOUDFLARE_ACCOUNT_ID AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY STUDIO_SUPERADMIN_EMAIL)
 
 script_dir="${BASH_SOURCE[0]%/*}"
 [ "$script_dir" = "${BASH_SOURCE[0]}" ] && script_dir="."
@@ -86,10 +89,10 @@ ask() {
 }
 
 # Read a value typed straight at its prompt. Keys are read without being
-# shown; the email address is shown as it is typed. Enter alone skips.
+# shown; email addresses are shown as they are typed. Enter alone skips.
 read_value() {
   local __var="$1" __value
-  if [ "$__var" = "CLOUDFLARE_EMAIL" ]; then
+  if [ "$__var" = "CLOUDFLARE_EMAIL" ] || [ "$__var" = "STUDIO_SUPERADMIN_EMAIL" ]; then
     printf '      Enter %s (press Enter to skip): ' "$__var"
     IFS= read -r __value || __value=""
     [ -t 0 ] || echo
@@ -372,6 +375,31 @@ fix_dependencies() {
   (cd "$REPO_ROOT" && pnpm install --frozen-lockfile)
 }
 
+# --- Playwright's Chromium (FR-00003) ----------------------------------------
+
+check_chromium() {
+  if [ ! -x "$REPO_ROOT/node_modules/.bin/playwright" ]; then
+    MSG="Playwright's Chromium not checked: Playwright is not installed in the workspace"
+    return 2
+  fi
+  local browsers="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}"
+  if compgen -G "$browsers/chromium-*" >/dev/null; then
+    MSG="Playwright's Chromium is installed"
+    return 0
+  fi
+  MSG="Playwright's Chromium is not installed"
+  HINT="run 'pnpm exec playwright install --with-deps chromium' in $REPO_ROOT"
+  return 1
+}
+
+fix_chromium() {
+  has pnpm || return 1
+  echo "      This downloads Chromium for the end-to-end tests into your home folder,"
+  echo "      and installs the system libraries it needs with sudo."
+  ask "      Install it with 'pnpm exec playwright install --with-deps chromium'?" || return 1
+  (cd "$REPO_ROOT" && pnpm exec playwright install --with-deps chromium)
+}
+
 # --- Credential file and values ----------------------------------------------
 
 check_credential_file() {
@@ -435,6 +463,9 @@ where_to_find() {
       echo "      Where to find it: the Secret Access Key shown once when you created the R2 API"
       echo "      token ($GUIDE, step 5). If you no longer have it, delete the token and create"
       echo "      a new one." ;;
+    STUDIO_SUPERADMIN_EMAIL)
+      echo "      What it is: the email address of the Content Studio SuperAdmin, who can always"
+      echo "      sign in. It is kept only in this file, never in the repository ($GUIDE, step 11)." ;;
   esac
 }
 
@@ -546,6 +577,42 @@ fix_r2() {
   return 0
 }
 
+# --- Cloudflare Zero Trust (FR-00003) ---------------------------------------
+
+# Zero Trust is turned on when the account has an Access organization.
+check_zero_trust() {
+  if [ "$curl_ok" != true ]; then
+    MSG="Cloudflare Zero Trust not checked: curl $MIN_CURL or later is needed"
+    return 2
+  fi
+  if [ "$creds_loaded" != true ] || [ -z "${CLOUDFLARE_EMAIL:-}" ] ||
+    [ -z "${CLOUDFLARE_API_KEY:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+    MSG="Cloudflare Zero Trust not checked: CLOUDFLARE_EMAIL, CLOUDFLARE_API_KEY, and CLOUDFLARE_ACCOUNT_ID are needed"
+    return 2
+  fi
+  local status
+  status="$(curl_status <<EOF
+url = "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/access/organizations"
+header = "X-Auth-Email: $CLOUDFLARE_EMAIL"
+header = "X-Auth-Key: $CLOUDFLARE_API_KEY"
+EOF
+)"
+  if [ "$status" = "200" ]; then
+    MSG="Cloudflare Zero Trust is turned on"
+    return 0
+  fi
+  MSG="Cloudflare Zero Trust is not turned on (HTTP $status)"
+  HINT="turn it on and choose a team name (see $GUIDE, step 11)"
+  return 1
+}
+
+fix_zero_trust() {
+  echo "      Turning on Zero Trust is a manual step in the Cloudflare dashboard: choose"
+  echo "      the Free plan and a team name ($GUIDE, step 11)."
+  ask "      Is that step done?" || return 1
+  return 0
+}
+
 # --- Main ---------------------------------------------------------------------
 
 if [ "$guided" = true ]; then
@@ -566,12 +633,14 @@ run check_gh_auth fix_gh_auth
 run check_node fix_node
 run check_pnpm fix_pnpm
 run check_dependencies fix_dependencies
+run check_chromium fix_chromium
 run check_credential_file fix_credential_file
 for var in "${REQUIRED_VARS[@]}"; do
   run check_value fix_value "$var"
 done
 run check_cloudflare fix_cloudflare
 run check_r2 fix_r2
+run check_zero_trust fix_zero_trust
 
 echo
 echo "$passed passed, $failed failed, $skipped skipped"

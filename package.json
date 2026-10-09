@@ -8,11 +8,21 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p packages/contracts && tsc -p apps/gateway && tsc -p tests/FR-00001"
+    "typecheck": "tsc -p packages/contracts && tsc -p apps/gateway && tsc -p tests/FR-00001 && tsc -p apps/studio-api && tsc -p apps/studio-web && tsc -p apps/studio-web/tsconfig.app.json && tsc -p tests/FR-00003/api && tsc -p tests/FR-00003/web && tsc -p tests/FR-00003/ui"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.3.7",
     "@dungeon-destiny/contracts": "workspace:*",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "jose": "6.2.12",
+    "jsdom": "30.1.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
     "wrangler": "4.148.0"

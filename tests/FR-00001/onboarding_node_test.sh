@@ -121,6 +121,7 @@ export CLOUDFLARE_API_KEY="fake-global-api-key"
 export CLOUDFLARE_ACCOUNT_ID="fakeaccountid"
 export AWS_ACCESS_KEY_ID="fake-access-key-id"
 export AWS_SECRET_ACCESS_KEY="fake-secret"
+export STUDIO_SUPERADMIN_EMAIL="superadmin@example.invalid"
 CREDS
   chmod 600 "$HOME/.config/dungeon-destiny/cloudflare.env"
 }

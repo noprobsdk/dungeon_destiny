@@ -26,6 +26,7 @@ describe("FR-00001: packages/contracts", () => {
   it("FR-00001: packages/contracts defines the stable error codes used by /health", () => {
     expect(ERROR_CODES.NOT_FOUND).toBe("NOT_FOUND");
     expect(ERROR_CODES.METHOD_NOT_ALLOWED).toBe("METHOD_NOT_ALLOWED");
-    expectTypeOf<ErrorCode>().toEqualTypeOf<"NOT_FOUND" | "METHOD_NOT_ALLOWED">();
+    // FR-00003 adds more codes, so this checks that these two are included.
+    expectTypeOf<"NOT_FOUND" | "METHOD_NOT_ALLOWED">().toExtend<ErrorCode>();
   });
 });

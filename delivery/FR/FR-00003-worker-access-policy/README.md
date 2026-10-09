@@ -1,6 +1,6 @@
 # FR-00003: Worker access policy
 
-- **Status:** In Specification
+- **Status:** In Progress
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** No GitHub Issue yet.
@@ -71,8 +71,7 @@ This Feature Request does not create or change:
   workspace, Worker, and deployment workflow this Feature Request reuses.
 - [`doc/test-driven-development.md`](../../../doc/test-driven-development.md).
 
-Design baseline commit: not yet set; it is the commit that contains this
-Feature Request.
+Design baseline commit: `d03ad86`.
 
 Source-document readiness gate: passes for this scope. The open decision on
 Worker secret management concerns the later Access-group sync, which this

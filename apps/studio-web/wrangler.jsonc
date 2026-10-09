@@ -1,0 +1,38 @@
+// FR-00003: the studio-web Worker (DD-020). It serves Content Studio's pages
+// as static assets, checks the Cloudflare Access token on every request, and
+// calls studio-api through a typed RPC service binding. Terraform creates the
+// Worker, its workers.dev address, and the Access application in front of it.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "studio-web",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-10-07",
+  "env": {
+    "dev": {
+      "name": "dd-dev-studio-web",
+      // Must match Terraform: subdomain.enabled = true, previews_enabled = false.
+      "workers_dev": true,
+      "preview_urls": false,
+      "assets": {
+        "directory": "./dist",
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application",
+        // Every request, pages included, passes the token check first.
+        "run_worker_first": true
+      },
+      "services": [
+        { "binding": "STUDIO_API", "service": "dd-dev-studio-api" }
+      ],
+      "vars": {
+        "ENVIRONMENT": "dev",
+        // Not secrets: the team domain is the sign-in address, and the
+        // audience tag is in every Access token. Set from Terraform's output.
+        "ACCESS_TEAM_DOMAIN": "https://dd-main-team.cloudflareaccess.com",
+        "ACCESS_AUD": ""
+      },
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      }
+    }
+  }
+}

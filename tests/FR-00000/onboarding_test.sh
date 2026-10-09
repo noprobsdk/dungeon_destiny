@@ -22,6 +22,8 @@ FAKE_API_KEY="fake-global-api-key-0123456789"
 FAKE_ACCOUNT_ID="fakeaccountid0123456789abcdef"
 FAKE_ACCESS_KEY_ID="fake-r2-access-key-id-0123"
 FAKE_SECRET="fake-r2-secret-access-key-0123456789"
+# FR-00003: the Content Studio SuperAdmin email address.
+FAKE_SUPERADMIN="superadmin@example.invalid"
 
 passed=0
 failed=0
@@ -148,6 +150,7 @@ export CLOUDFLARE_API_KEY="$FAKE_API_KEY"
 export CLOUDFLARE_ACCOUNT_ID="$FAKE_ACCOUNT_ID"
 export AWS_ACCESS_KEY_ID="$FAKE_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="$FAKE_SECRET"
+export STUDIO_SUPERADMIN_EMAIL="$FAKE_SUPERADMIN"
 EOF
   chmod 600 "$CRED_FILE"
 }
@@ -551,7 +554,7 @@ test_guided_value_prompt_takes_the_value_directly() {
 
 # Answers for guided mode with no credential file: Yes to creating the file,
 # then each of the five values typed at its prompt, in the script's order.
-ENTER_ALL_VALUES="y\n$FAKE_EMAIL\n$FAKE_API_KEY\n$FAKE_ACCOUNT_ID\n$FAKE_ACCESS_KEY_ID\n$FAKE_SECRET\n"
+ENTER_ALL_VALUES="y\n$FAKE_EMAIL\n$FAKE_API_KEY\n$FAKE_ACCOUNT_ID\n$FAKE_ACCESS_KEY_ID\n$FAKE_SECRET\n$FAKE_SUPERADMIN\n"
 
 echo "FR-00000 onboarding script tests"
 echo

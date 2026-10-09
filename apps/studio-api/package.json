@@ -1,0 +1,14 @@
+{
+  "name": "@dungeon-destiny/studio-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "wrangler types --env dev --strict-vars=false",
+    "dev": "wrangler dev --env dev",
+    "deploy:dev": "../../devops/deploy-studio-api.sh"
+  },
+  "dependencies": {
+    "@dungeon-destiny/contracts": "workspace:*"
+  }
+}
