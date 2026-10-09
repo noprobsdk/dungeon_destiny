@@ -2,6 +2,23 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-10: Implemented, moved to In Review
+
+- **Change:** Implemented FR-00003: the `studio-api` and `studio-web` Workers
+  deployed behind Cloudflare Access with one-time PIN sign-in and a
+  SuperAdmin-only policy, the React pages, the deploy script, the onboarding
+  checks, setup-guide steps 11 and 12, the `AGENTS.md` commands, and the
+  tests, including a browser end-to-end test. Added
+  `implementation_report.md` and moved the status to `In Review`.
+- **Reason:** Steps 2 to 8 of the implementation sequence are complete. Every
+  Section 16 check passed, also from a clean clone of `2ca1885`. The Access
+  policy is defined inside the Access application (implementation decision
+  17), as approved by the project owner during implementation.
+- **Affected files:** `README.md`, `implementation_report.md`, `CHANGELOG.md`.
+- **Verification:** All three files match their approved proposals. The
+  implementation decisions and findings are recorded in
+  `implementation_report.md`.
+
 ## 2026-10-09: Moved to In Progress
 
 - **Change:** Set the design baseline commit to `d03ad86` and moved the status
