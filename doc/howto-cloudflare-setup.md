@@ -7,7 +7,7 @@ Dungeon Destiny's Cloudflare infrastructure with its state in R2, and so that
 the Workers can be built, tested, and deployed, and the GitHub Issues that track
 Feature Requests can be managed with the GitHub CLI.
 
-This guide is the main source for these steps. [FR-00000](../delivery/FR/FR-00000-feature-request-terraform-setup/README.md)
+This guide is the main source for these steps. [FR-00000](../delivery/FR/FR-00000-terraform-setup/README.md)
 implements and verifies it, and `devops/README.md` links here.
 
 ## When to use
@@ -247,7 +247,7 @@ Expected result: the last line reads `0 failed`.
 
 ## References
 
-- [FR-00000: Terraform setup](../delivery/FR/FR-00000-feature-request-terraform-setup/README.md)
+- [FR-00000: Terraform setup](../delivery/FR/FR-00000-terraform-setup/README.md)
 - [DD-016](12-decisions/decision-log.md)
 - [Install Terraform](https://developer.hashicorp.com/terraform/install)
 - [Terraform S3 backend](https://developer.hashicorp.com/terraform/language/backend/s3)

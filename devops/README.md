@@ -7,11 +7,11 @@ infrastructure tooling.
 
 `onboarding.sh` checks that this machine has the packages and access needed to
 run Terraform and build the Workers for Dungeon Destiny. It was added by
-[FR-00000](../delivery/FR/FR-00000-feature-request-terraform-setup/README.md)
+[FR-00000](../delivery/FR/FR-00000-terraform-setup/README.md)
 and extended for Node.js and pnpm by
-[FR-00001](../delivery/FR/FR-00001-feature-request-worker-dev-workflow/README.md)
+[FR-00001](../delivery/FR/FR-00001-worker-dev-workflow/README.md)
 and for the GitHub CLI by
-[FR-00002](../delivery/FR/FR-00002-feature-request-github-cli-onboarding/README.md).
+[FR-00002](../delivery/FR/FR-00002-github-cli-onboarding/README.md).
 
 The manual setup steps, such as creating the R2 bucket and finding each
 credential value, are in

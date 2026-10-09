@@ -31,7 +31,7 @@ one state per environment. See [DD-016](../../12-decisions/decision-log.md).
 | Onboarding script | Checking that a machine can run the tools above | `devops/onboarding.sh` |
 
 The Terraform setup, its state bucket, and the onboarding script were delivered
-by [FR-00000](../../../delivery/FR/FR-00000-feature-request-terraform-setup/README.md).
+by [FR-00000](../../../delivery/FR/FR-00000-terraform-setup/README.md).
 
 ## Testing
 

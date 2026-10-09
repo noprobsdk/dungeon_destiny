@@ -47,8 +47,8 @@ This Feature Request does not:
   is read and closed when as-built documentation is published.
 - [Technology and tooling](../../../doc/08-technical/service-architecture/technology.md):
   the onboarding script.
-- [FR-00000](../FR-00000-feature-request-terraform-setup/README.md) and
-  [FR-00001](../FR-00001-feature-request-worker-dev-workflow/README.md): the
+- [FR-00000](../FR-00000-terraform-setup/README.md) and
+  [FR-00001](../FR-00001-worker-dev-workflow/README.md): the
   onboarding script this Feature Request extends.
 - [`doc/test-driven-development.md`](../../../doc/test-driven-development.md).
 

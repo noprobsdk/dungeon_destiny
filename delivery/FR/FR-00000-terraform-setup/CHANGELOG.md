@@ -2,6 +2,16 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-09: Folder renamed
+
+- **Change:** Renamed this Feature Request's folder from `FR-00000-feature-request-terraform-setup/` to
+  `FR-00000-terraform-setup/`.
+- **Reason:** The project owner decided that every Feature Request folder is
+  named `FR-<number>-<name>`, without `feature-request-`.
+- **Affected files:** `CHANGELOG.md`, and the folder name.
+- **Verification:** The file matches its approved proposal, and every link to
+  the folder in the repository resolves.
+
 ## 2026-10-07: Worker name corrected
 
 - **Change:** The scope exclusion now names the `dd-dev-gateway` Worker instead

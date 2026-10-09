@@ -2,6 +2,16 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-09: Folder renamed
+
+- **Change:** Renamed this Feature Request's folder from `FR-00001-feature-request-worker-dev-workflow/` to
+  `FR-00001-worker-dev-workflow/`. Updated the links to other Feature Request folders in `README.md`.
+- **Reason:** The project owner decided that every Feature Request folder is
+  named `FR-<number>-<name>`, without `feature-request-`.
+- **Affected files:** `README.md`, `CHANGELOG.md`, and the folder name.
+- **Verification:** Both files match their approved proposals, and every link to
+  the folder in the repository resolves.
+
 ## 2026-10-08: Accepted, moved to Pending documentation
 
 - **Change:** The project owner accepted the implementation against the

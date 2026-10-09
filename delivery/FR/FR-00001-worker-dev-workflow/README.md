@@ -71,7 +71,7 @@ This Feature Request does not create or change:
   section "Standard response format".
 - [DD-015, DD-016, DD-017, and DD-019](../../../doc/12-decisions/decision-log.md).
 - [`AGENTS.md`](../../../AGENTS.md), section "TypeScript and Cloudflare Workers".
-- [FR-00000](../FR-00000-feature-request-terraform-setup/README.md): the
+- [FR-00000](../FR-00000-terraform-setup/README.md): the
   Terraform setup and onboarding script this Feature Request extends.
 - [`doc/test-driven-development.md`](../../../doc/test-driven-development.md).
 

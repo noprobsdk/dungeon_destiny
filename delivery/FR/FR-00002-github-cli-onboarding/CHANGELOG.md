@@ -2,6 +2,16 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-09: Folder renamed
+
+- **Change:** Renamed this Feature Request's folder from `FR-00002-feature-request-github-cli-onboarding/` to
+  `FR-00002-github-cli-onboarding/`. Updated the links to other Feature Request folders in `README.md`.
+- **Reason:** The project owner decided that every Feature Request folder is
+  named `FR-<number>-<name>`, without `feature-request-`.
+- **Affected files:** `README.md`, `CHANGELOG.md`, and the folder name.
+- **Verification:** Both files match their approved proposals, and every link to
+  the folder in the repository resolves.
+
 ## 2026-10-09: Accepted, moved to Pending documentation
 
 - **Change:** The project owner accepted the implementation against the

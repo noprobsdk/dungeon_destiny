@@ -1,13 +1,13 @@
 name: Feature Request
 description: Track one Feature Request kept under delivery/.
-title: "FR-00000-feature-request-<name>"
+title: "FR-00000-<name>"
 labels:
   - feature
 body:
   - type: markdown
     attributes:
       value: |
-        This issue tracks a Feature Request. The Feature Request itself is kept in this repository under `delivery/FR/FR-<number>-feature-request-<name>/`, following `doc/howto-feature-request.md`. This issue is never the Feature Request source: do not record scope, acceptance criteria, or design decisions here.
+        This issue tracks a Feature Request. The Feature Request itself is kept in this repository under `delivery/FR/FR-<number>-<name>/`, following `doc/howto-feature-request.md`. This issue is never the Feature Request source: do not record scope, acceptance criteria, or design decisions here.
 
   - type: input
     id: feature_request_number
@@ -23,7 +23,7 @@ body:
     attributes:
       label: Feature Request
       description: Link to the Feature Request README.md.
-      placeholder: delivery/FR/FR-00001-feature-request-<name>/README.md
+      placeholder: delivery/FR/FR-00001-<name>/README.md
     validations:
       required: true
 
