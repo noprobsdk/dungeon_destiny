@@ -2,6 +2,16 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-10: Accepted, moved to Pending documentation
+
+- **Change:** The project owner accepted the implementation against the
+  Section 17 acceptance criteria. Moved the status to `Pending documentation`.
+- **Reason:** All Section 16 checks passed, `implementation_report.md` is
+  complete, no decisions are unresolved, and no unapproved changes were made.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals. The as-built
+  documentation is still to be published.
+
 ## 2026-10-10: Implemented, moved to In Review
 
 - **Change:** Implemented FR-00003: the `studio-api` and `studio-web` Workers
