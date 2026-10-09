@@ -9,7 +9,9 @@ infrastructure tooling.
 run Terraform and build the Workers for Dungeon Destiny. It was added by
 [FR-00000](../delivery/FR/FR-00000-feature-request-terraform-setup/README.md)
 and extended for Node.js and pnpm by
-[FR-00001](../delivery/FR/FR-00001-feature-request-worker-dev-workflow/README.md).
+[FR-00001](../delivery/FR/FR-00001-feature-request-worker-dev-workflow/README.md)
+and for the GitHub CLI by
+[FR-00002](../delivery/FR/FR-00002-feature-request-github-cli-onboarding/README.md).
 
 The manual setup steps, such as creating the R2 bucket and finding each
 credential value, are in
@@ -32,6 +34,9 @@ and asks before doing anything:
   standalone installer in your home folder, without `sudo`. After installing
   pnpm, open a new terminal or run `source ~/.bashrc`;
 - missing project dependencies: it offers `pnpm install --frozen-lockfile`;
+- the GitHub CLI not signed in: it explains how to run `gh auth login` in
+  another terminal, asks whether you have, and checks again. It never signs in
+  for you;
 - a missing or unsafe credential file: it offers to create it with safe
   permissions;
 - a missing value: it explains where to find the value, then reads it at its
@@ -56,6 +61,8 @@ Without a terminal, for example in automation, the script also only checks.
   installed.
 - Node.js 24 and the pnpm version pinned in `package.json` are installed, and
   the project dependencies are installed.
+- The GitHub CLI, `gh`, is installed and signed in. Its account and token
+  details are never shown.
 - `~/.config/dungeon-destiny/cloudflare.env` exists, only its owner can read
   it, and it sets `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_KEY`,
   `CLOUDFLARE_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`.
@@ -68,12 +75,12 @@ Cloudflare.
 
 ### Tests
 
-The script's tests are in `tests/FR-00000/onboarding_test.sh` and
-`tests/FR-00001/onboarding_node_test.sh`. They use stand-in programs and a
-temporary home folder, so they need no network access, install nothing, and use
-no real credentials:
+The script's tests are in `tests/FR-00000/`, `tests/FR-00001/`, and
+`tests/FR-00002/`. They use stand-in programs and a temporary home folder, so
+they need no network access, install nothing, and use no real credentials:
 
 ```bash
 tests/FR-00000/onboarding_test.sh
 tests/FR-00001/onboarding_node_test.sh
+tests/FR-00002/onboarding_gh_test.sh
 ```

@@ -123,6 +123,8 @@ STUB
   # machine where they are already installed.
   printf '#!/usr/bin/env bash\necho v24.21.0\n' >"$FAKEBIN/node"
   printf '#!/usr/bin/env bash\necho 12.10.1\n' >"$FAKEBIN/pnpm"
+  # Stand-in GitHub CLI (FR-00002), installed and signed in.
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$FAKEBIN/gh"
   chmod +x "$FAKEBIN"/*
   cp "$FAKEBIN/terraform" "$FAKEBIN/jq" "$FAKEBIN/shellcheck" "$FAKEBIN/git" "$AVAILABLE/"
   # Run a copy of the script in a fake repository without a pnpm workspace, so

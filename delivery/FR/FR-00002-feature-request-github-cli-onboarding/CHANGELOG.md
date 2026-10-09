@@ -2,6 +2,15 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-08: Moved to In Progress
+
+- **Change:** Set the design baseline commit to `00a1340` and moved the status
+  through `Backlog` to `In Progress`.
+- **Reason:** The specification was committed and pushed; there are no
+  unresolved decisions or blockers.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals.
+
 ## 2026-10-08: Feature Request created
 
 - **Change:** Created `README.md` with status `In Specification`. It adds the

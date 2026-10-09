@@ -71,7 +71,21 @@ source ~/.config/dungeon-destiny/cloudflare.env
 pnpm --filter @dungeon-destiny/gateway run deploy:dev
 ```
 
-### Tests and lint (FR-00000, FR-00001)
+### GitHub CLI (FR-00002)
+
+The GitHub CLI (`gh`) works with the issues and pull requests of
+`noprobsdk/dungeon_destiny`. The owner signs in once with `gh auth login`;
+agents never run it. Check the sign-in without printing the token:
+
+```bash
+gh auth status
+```
+
+Reading with `gh` needs no approval. Posting to GitHub is outward-facing and
+the repository is public: show every comment, issue, pull request, or status
+change to the owner and get approval before posting it.
+
+### Tests and lint (FR-00000, FR-00001, FR-00002)
 
 ```bash
 tests/FR-00000/onboarding_test.sh
@@ -82,6 +96,7 @@ tests/FR-00001/typecheck_test.sh
 tests/FR-00001/terraform_guard_test.sh
 tests/FR-00001/terraform_worker_test.sh
 tests/FR-00001/deployed_test.sh
+tests/FR-00002/onboarding_gh_test.sh
 pnpm test
 shellcheck devops/onboarding.sh tests/FR-0000*/*.sh
 ```

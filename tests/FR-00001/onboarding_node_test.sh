@@ -75,6 +75,8 @@ printf '200'
 STUB
   printf '#!/usr/bin/env bash\necho "ShellCheck"\n' >"$FAKEBIN/shellcheck"
   printf '#!/usr/bin/env bash\necho "git version 2.34.1"\n' >"$FAKEBIN/git"
+  # Stand-in GitHub CLI (FR-00002), installed and signed in.
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$FAKEBIN/gh"
   cat >"$AVAILABLE/node" <<'STUB'
 #!/usr/bin/env bash
 echo "$FAKE_NODE_VERSION"

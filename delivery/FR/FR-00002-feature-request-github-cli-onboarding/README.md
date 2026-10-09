@@ -1,6 +1,6 @@
 # FR-00002: GitHub CLI onboarding
 
-- **Status:** In Specification
+- **Status:** In Progress
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** No GitHub Issue yet.
@@ -52,8 +52,7 @@ This Feature Request does not:
   onboarding script this Feature Request extends.
 - [`doc/test-driven-development.md`](../../../doc/test-driven-development.md).
 
-Design baseline commit: not yet set; it is the commit that contains this
-Feature Request.
+Design baseline commit: `00a1340`.
 
 Source-document readiness gate: passes for this scope. No open decision in the
 sources concerns the GitHub CLI.

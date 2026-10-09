@@ -229,6 +229,57 @@ check_git() {
 }
 fix_git() { install_package git; }
 
+# --- GitHub CLI (FR-00002) ---------------------------------------------------
+
+check_gh() {
+  if has gh; then MSG="GitHub CLI (gh) is installed"; return 0; fi
+  MSG="GitHub CLI (gh) is not installed"
+  HINT="install it from GitHub's apt repository (see $GUIDE)"
+  return 1
+}
+
+fix_gh() {
+  echo "      This adds GitHub's apt repository and installs the GitHub CLI, gh."
+  ask "      Install the GitHub CLI now?" || return 1
+  local keyring
+  keyring="$(mktemp)" || return 1
+  sudo mkdir -p -m 755 /etc/apt/keyrings &&
+    wget -nv -O"$keyring" https://cli.github.com/packages/githubcli-archive-keyring.gpg &&
+    sudo install -m 644 "$keyring" /etc/apt/keyrings/githubcli-archive-keyring.gpg &&
+    sudo mkdir -p -m 755 /etc/apt/sources.list.d &&
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" |
+    sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null &&
+    sudo apt-get update &&
+    sudo apt-get install -y gh
+  local result=$?
+  rm -f "$keyring"
+  return "$result"
+}
+
+# Checks the sign-in through gh's exit status only; gh's own output, which
+# describes the account and token, is never shown.
+check_gh_auth() {
+  if ! has gh; then
+    MSG="GitHub CLI sign-in not checked: gh is not installed"
+    return 2
+  fi
+  if gh auth status >/dev/null 2>&1; then
+    MSG="GitHub CLI (gh) is signed in"
+    return 0
+  fi
+  MSG="GitHub CLI (gh) is not signed in"
+  HINT="run 'gh auth login' in a terminal and follow its steps"
+  return 1
+}
+
+fix_gh_auth() {
+  echo "      Signing in is interactive, so this script cannot do it for you. In another"
+  echo "      terminal, run 'gh auth login': choose GitHub.com, SSH, and Login with a"
+  echo "      web browser, and enter the one-time code it shows on github.com."
+  ask "      Have you run 'gh auth login'?" || return 1
+  return 0
+}
+
 # --- Node.js, pnpm, and project dependencies (FR-00001) --------------------
 
 # The pnpm version pinned in the workspace's package.json, or nothing when
@@ -510,6 +561,8 @@ run check_terraform fix_terraform
 run check_curl fix_curl
 run check_shellcheck fix_shellcheck
 run check_git fix_git
+run check_gh fix_gh
+run check_gh_auth fix_gh_auth
 run check_node fix_node
 run check_pnpm fix_pnpm
 run check_dependencies fix_dependencies

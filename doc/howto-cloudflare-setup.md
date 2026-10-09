@@ -4,7 +4,8 @@
 
 Prepare a WSL machine and the Cloudflare account so that Terraform can manage
 Dungeon Destiny's Cloudflare infrastructure with its state in R2, and so that
-the Workers can be built, tested, and deployed.
+the Workers can be built, tested, and deployed, and the GitHub Issues that track
+Feature Requests can be managed with the GitHub CLI.
 
 This guide is the main source for these steps. [FR-00000](../delivery/FR/FR-00000-feature-request-terraform-setup/README.md)
 implements and verifies it, and `devops/README.md` links here.
@@ -39,7 +40,7 @@ Cloudflare resources other than the state bucket.
 Cloudflare dashboard labels below are taken from Cloudflare's documentation
 and may change.
 
-The guided onboarding script can do steps 1, 2, 8, and 9 for you, explains where
+The guided onboarding script can do steps 1, 2, 8, 9, and 10 for you, explains where
 to find each value, and checks every step. Run it from the repository root, and
 see [`devops/README.md`](../devops/README.md):
 
@@ -157,6 +158,26 @@ pnpm. Then install the project dependencies from the repository root:
 pnpm install --frozen-lockfile
 ```
 
+### 10. Install the GitHub CLI and sign in
+
+Working directory: any. These commands are from GitHub's `cli/cli` installation
+guide:
+
+```bash
+(type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)) && sudo mkdir -p -m 755 /etc/apt/keyrings && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && sudo mkdir -p -m 755 /etc/apt/sources.list.d && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && sudo apt update && sudo apt install gh -y
+```
+
+Then sign in. Signing in is interactive, so the onboarding script cannot do it
+for you:
+
+```bash
+gh auth login
+```
+
+Choose **GitHub.com**, then **SSH**, then **Login with a web browser**, and
+enter the one-time code it shows on github.com. `gh` stores the sign-in in your
+home folder, never in this repository.
+
 ## Verification
 
 Working directory: any.
@@ -167,6 +188,7 @@ shellcheck --version
 jq --version
 node --version
 pnpm --version
+gh auth status
 ls -l ~/.config/dungeon-destiny/cloudflare.env
 ```
 
@@ -177,6 +199,8 @@ Expected results:
 - jq prints its version.
 - Node.js prints a version starting with `v24.`.
 - pnpm prints the version pinned in `package.json`.
+- `gh auth status` reports that you are logged in to github.com. Do not share
+  its output; it describes your account.
 - The credential file line starts with `-rw-------`.
 
 Check that every value is set, without printing any value:
@@ -236,3 +260,4 @@ Expected result: the last line reads `0 failed`.
 - [Terraform remote backend on R2](https://developers.cloudflare.com/terraform/advanced-topics/remote-backend/)
 - [NodeSource Node.js installation](https://github.com/nodesource/distributions/blob/master/DEV_README.md)
 - [pnpm installation](https://pnpm.io/installation)
+- [GitHub CLI installation on Linux](https://github.com/cli/cli/blob/trunk/docs/install_linux.md)
