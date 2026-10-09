@@ -26,7 +26,7 @@ The backend does the work and holds the data:
 
 | Frontend | Used by | Talks to | Protocol |
 |---|---|---|---|
-| Content Studio | staff, such as content authors and support users | the `studio-api` Worker, through Cloudflare Access | HTTPS |
+| Content Studio | staff, such as content authors and support users | the `studio-web` Worker, through Cloudflare Access | HTTPS |
 | Godot game client | players, on phones and tablets | the `gateway` Worker | HTTPS |
 | | | its assigned Godot game server, for live gameplay | WebSocket over TLS |
 | | | published R2, through Cloudflare's CDN, to download published files such as manifests and 3D assets | HTTPS, read only |
@@ -36,8 +36,12 @@ Worker, database, or storage directly. Published files are immutable, use
 versioned names, and are checked against their checksums after download.
 
 Content Studio's own pages are also hosted on Cloudflare
-([DD-009](../../12-decisions/decision-log.md)), but they remain a frontend that
-calls `studio-api`.
+([DD-009](../../12-decisions/decision-log.md)): they are a React single-page
+app served as static assets by the `studio-web` Worker
+([DD-020](../../12-decisions/decision-log.md)). `studio-web` belongs to the
+frontend. It serves the pages, checks the Cloudflare Access token on every
+request, and passes `/api/*` calls on to `studio-api` through a service
+binding. It holds no business rules and binds no database or storage.
 
 ## Content Studio
 
@@ -50,11 +54,12 @@ It can:
 - record review and approval evidence;
 - publish immutable releases;
 - upload asset metadata and approved files;
-- look up any content and player data and apply approved player-data corrections through its customer-service page.
+- look up any content and player data and apply approved player-data corrections through its customer-service page;
+- manage the staff users who may sign in, and their roles.
 
 Content Studio communicates through protected administration APIs. It must not connect directly to production databases or modify Published records in place.
 
-Those APIs are served by the `studio-api` Worker, which is reached only through Cloudflare Access. See [DD-017](../../12-decisions/decision-log.md).
+Those APIs are served by the `studio-api` Worker. It has no public address: it is reached only through `studio-web`, behind Cloudflare Access. See [DD-017](../../12-decisions/decision-log.md) and [DD-020](../../12-decisions/decision-log.md).
 
 ## Godot game client
 

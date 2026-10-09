@@ -8,8 +8,8 @@ It applies to the Cloudflare D1-compatible SQLite database, Drizzle schema defin
 
 The database structure has two connected sources of truth:
 
-1. `content-studio/db/schema.ts` defines the current application-level schema.
-2. Numbered files under `content-studio/drizzle/` define the ordered history required to create or upgrade a database.
+1. `apps/studio-api/src/db/schema.ts` defines the current application-level schema with Drizzle ORM (DD-020).
+2. Numbered SQL files under `apps/studio-api/migrations/`, generated with `drizzle-kit` and applied with `wrangler d1 migrations apply`, define the ordered history required to create or upgrade a database.
 
 Both must describe the same final structure.
 
@@ -34,8 +34,8 @@ Database changes follow this order:
 1. Describe the proposed change, including From and To structures.
 2. Identify affected tables, relations, API contracts, UI, manifests, and existing records.
 3. Obtain approval before implementation.
-4. Update `content-studio/db/schema.ts`.
-5. Create the next numbered migration under `content-studio/drizzle/`.
+4. Update `apps/studio-api/src/db/schema.ts`.
+5. Generate the next numbered migration under `apps/studio-api/migrations/` with `drizzle-kit`, and review the generated SQL.
 6. Preserve or explicitly transform existing data.
 7. Update TypeScript types, API queries, validation, and UI consumers.
 8. Apply the migration to a clean local database.

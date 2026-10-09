@@ -32,6 +32,32 @@ Cloudflare Access protects:
 
 Cloudflare Access is not the player-login system.
 
+Staff sign in with a one-time PIN: Access emails a code that works once and
+expires after 10 minutes, so there is no password to remember. The Access
+application, its policy, and its session duration are managed by Terraform.
+See [DD-020](../../12-decisions/decision-log.md).
+
+Access stands in front of the `studio-web` Worker, which serves Content Studio
+and passes `/api/*` calls on to `studio-api`. `studio-api` has no public
+address. `studio-web` validates the signed Access token in the
+`Cf-Access-Jwt-Assertion` header on every request, against the team domain
+and the application's audience tag, and passes the signed-in person's identity
+on to `studio-api`.
+
+### Staff users
+
+The single list of staff users is a staff table in Content D1, owned by
+`studio-api` and managed in Content Studio. Access proves that a person owns
+their email address; `studio-api` then lets in only an Active staff user and
+decides what their role allows. Staff users are deactivated, never deleted,
+so audit records keep a valid author, and every change to a staff user is
+audited.
+
+A deactivated user is refused at once, even while their Access session is
+still valid. Keeping an Access group in step with the staff table, so that
+Access also blocks people who are not staff, is added later, once Worker
+secret management is decided.
+
 ## Player Identity
 
 Player Identity provides:
