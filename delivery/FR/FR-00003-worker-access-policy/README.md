@@ -18,8 +18,7 @@ table, and the Staff users screen follow in a later Feature Request.
 
 ## 2. Implementation sequence
 
-1. Resolve the Section 18 decisions, then move this Feature Request to
-   `Backlog`, then to `In Progress`.
+1. Move this Feature Request to `Backlog`, then to `In Progress`.
 2. Turn on Cloudflare Zero Trust and choose a team name, following the new
    setup-guide step; extend the onboarding script with the checks it needs.
 3. Write the `studio-api` and `studio-web` tests and confirm they fail.
@@ -75,9 +74,9 @@ This Feature Request does not create or change:
 Design baseline commit: not yet set; it is the commit that contains this
 Feature Request.
 
-Source-document readiness gate: passes for this scope once the Section 18
-decisions are resolved. The open decision on Worker secret management concerns
-the later Access-group sync, which this Feature Request does not include.
+Source-document readiness gate: passes for this scope. The open decision on
+Worker secret management concerns the later Access-group sync, which this
+Feature Request does not include.
 
 ## 5. Target ownership
 
@@ -93,10 +92,10 @@ the later Access-group sync, which this Feature Request does not include.
 - FR-00001 is `Pending documentation` or later.
 - Cloudflare Zero Trust is turned on for the account, with a team name, on its
   free plan. The plan's limits are confirmed before relying on it.
-- The SuperAdmin email address is available to Terraform and the Workers
-  (Section 18).
+- The SuperAdmin email address is set as `STUDIO_SUPERADMIN_EMAIL` in the
+  owner's private credential file.
 
-Blockers: the Section 18 decisions.
+Blockers: none.
 
 ## 7. Approved decisions
 
@@ -115,6 +114,12 @@ Blockers: the Section 18 decisions.
   SuperAdmin can always sign in and cannot be changed or deactivated from
   Content Studio. In this Feature Request, the SuperAdmin is the only person
   let in.
+- The SuperAdmin email address is kept in the owner's private credential file
+  as `STUDIO_SUPERADMIN_EMAIL`. Terraform reads it from there, and it is passed
+  to the Workers at deploy time, so it never appears in the repository.
+- The Access policy lets in only the SuperAdmin's email address, so nobody else
+  can request a PIN. The later staff-users Feature Request opens it to any
+  email address, with `studio-api` deciding who is let in.
 - `studio-api` decides who is let in. Anyone else who passes Access receives
   the standard error response with a stable `code`, and the page shows that
   they are not allowed.
@@ -223,16 +228,6 @@ credentials, tokens, and email addresses removed.
 
 ## 18. Unresolved decisions
 
-1. **Where the SuperAdmin email address is kept.** The repository is public.
-   Recommended: in the owner's private credential file, read by Terraform and
-   passed to the Workers at deploy time, so it never appears in the
-   repository. Alternative: in a tracked Terraform file, which publishes it.
-2. **Who the Access policy lets in.** Recommended: only the SuperAdmin's email
-   address in this Feature Request, so nobody else can request a PIN; the
-   later staff-users Feature Request opens it to any email address, with
-   `studio-api` deciding who is let in. Alternative: any email address from
-   the start.
-
-Implementation details, such as the session duration, the identity header
-name, and the token library, are settled in the implementation-decision
+None. Implementation details, such as the session duration, the identity
+header name, and the token library, are settled in the implementation-decision
 review before tests are written.
