@@ -2,6 +2,20 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-09: Implemented, moved to In Review
+
+- **Change:** Implemented FR-00002: the onboarding script checks that `gh` is
+  installed and signed in and offers GitHub's official installation after Yes;
+  the FR-00002 tests, step 10 of the setup guide, and the `gh` notes in
+  `devops/README.md` and `AGENTS.md`. Added `implementation_report.md` and
+  moved the status to `In Review`.
+- **Reason:** Steps 2 to 5 of the implementation sequence are complete. Every
+  Section 16 check passed, also from a clean clone of `dc60ef1`.
+- **Affected files:** `README.md`, `implementation_report.md`, `CHANGELOG.md`.
+- **Verification:** All three files match their approved proposals. The
+  implementation decisions and findings are recorded in
+  `implementation_report.md`.
+
 ## 2026-10-08: Moved to In Progress
 
 - **Change:** Set the design baseline commit to `00a1340` and moved the status
