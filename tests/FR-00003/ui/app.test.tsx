@@ -1,7 +1,7 @@
 // FR-00003 tests for Content Studio's pages. They render the React app in
 // jsdom and answer its /api calls with stand-in responses in the standard
 // response format.
-import type { ApiResponse, ErrorCode, StaffMember } from "@dungeon-destiny/contracts";
+import type { ApiResponse, ErrorCode, SignedInPerson } from "@dungeon-destiny/contracts";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../../apps/studio-web/src/app/App";
@@ -38,6 +38,9 @@ function answer(answers: Answers) {
   return requested;
 }
 
+// FR-00004: GET /api/me returns the signed-in person with their permissions.
+const signedIn: SignedInPerson = { email: SUPERADMIN, displayName: "SuperAdmin", superadmin: true, roles: [], permissions: [] };
+
 const healthy = { status: 200, body: body("ok", null, null, "studio-api") };
 
 beforeEach(() => {
@@ -52,7 +55,7 @@ afterEach(() => {
 describe("FR-00003: Content Studio pages", () => {
   it("FR-00003: the signed-in page shows the SuperAdmin's email address and the studio-api status", async () => {
     const requested = answer({
-      "/api/me": { status: 200, body: body<StaffMember>("ok", null, { email: SUPERADMIN, role: "superadmin" }, "studio-api") },
+      "/api/me": { status: 200, body: body<SignedInPerson>("ok", null, signedIn, "studio-api") },
       "/api/health": healthy,
     });
     render(<App />);
@@ -86,7 +89,7 @@ describe("FR-00003: Content Studio pages", () => {
 
   it("FR-00003: the signed-in page says when studio-api is not running", async () => {
     answer({
-      "/api/me": { status: 200, body: body<StaffMember>("ok", null, { email: SUPERADMIN, role: "superadmin" }, "studio-api") },
+      "/api/me": { status: 200, body: body<SignedInPerson>("ok", null, signedIn, "studio-api") },
       "/api/health": { status: 500, body: { unexpected: true } },
     });
     render(<App />);

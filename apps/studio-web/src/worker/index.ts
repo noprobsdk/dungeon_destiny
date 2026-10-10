@@ -1,11 +1,11 @@
-// FR-00003: the studio-web Worker (DD-020). Cloudflare Access stands in front
+// FR-00003, FR-00004: the studio-web Worker (DD-020). Cloudflare Access stands in front
 // of it, and it checks the Access token on every request, pages included
 // (run_worker_first). Signed-in requests to /api are passed to studio-api
 // through its typed RPC service binding, with the identity taken from the
 // token; anything else is served from the static assets. Responses that
 // studio-web itself produces use the standard response format (DD-019).
 import { ERROR_CODES } from "@dungeon-destiny/contracts";
-import type { ApiResponse, ErrorCode, ResponseMeta, StudioApiRpc } from "@dungeon-destiny/contracts";
+import type { ApiResponse, ErrorCode, ResponseMeta, StaffIdentity, StudioApiRpc } from "@dungeon-destiny/contracts";
 import { verifyAccessToken } from "./access-token";
 
 const SERVICE = "studio-web";
@@ -42,23 +42,102 @@ function studioApi(env: Env): StudioApiRpc {
 // The HTTP status for a studio-api result.
 function httpStatus(body: ApiResponse<unknown>): number {
   if (body.status === "ok") return 200;
-  if (body.code === ERROR_CODES.NOT_STAFF) return 403;
-  if (body.code === ERROR_CODES.NOT_FOUND) return 404;
-  return 500;
+  switch (body.code) {
+    case ERROR_CODES.NOT_STAFF:
+    case ERROR_CODES.PERMISSION_DENIED:
+      return 403;
+    case ERROR_CODES.VALIDATION_FAILED:
+      return 400;
+    case ERROR_CODES.NOT_FOUND:
+      return 404;
+    case ERROR_CODES.CONFLICT:
+      return 409;
+    case ERROR_CODES.ACCESS_SYNC_FAILED:
+      return 502;
+    default:
+      return 500;
+  }
+}
+
+// FR-00004: one route per studio-api RPC method. Each handler receives the
+// API, the identity, the request ID, the path's ID, and the parsed body.
+type Call = (
+  api: StudioApiRpc,
+  identity: StaffIdentity,
+  requestId: string,
+  id: string,
+  body: unknown,
+) => Promise<ApiResponse<unknown>>;
+
+type Route = { pattern: RegExp; methods: Record<string, Call> };
+
+const ID = "([0-9a-fA-F-]{36})";
+
+const ROUTES: Route[] = [
+  { pattern: /^\/api\/me$/, methods: { GET: (api, who, rid) => api.me(who, rid) } },
+  { pattern: /^\/api\/health$/, methods: { GET: (api, _who, rid) => api.health(rid) } },
+  {
+    pattern: /^\/api\/users$/,
+    methods: {
+      GET: (api, who, rid) => api.listUsers(who, rid),
+      POST: (api, who, rid, _id, body) => api.createUser(who, rid, body),
+    },
+  },
+  {
+    pattern: new RegExp(`^/api/users/${ID}$`),
+    methods: {
+      GET: (api, who, rid, id) => api.getUser(who, rid, id),
+      PATCH: (api, who, rid, id, body) => api.updateUser(who, rid, id, body),
+    },
+  },
+  { pattern: new RegExp(`^/api/users/${ID}/deactivate$`), methods: { POST: (api, who, rid, id) => api.deactivateUser(who, rid, id) } },
+  { pattern: new RegExp(`^/api/users/${ID}/reactivate$`), methods: { POST: (api, who, rid, id) => api.reactivateUser(who, rid, id) } },
+  { pattern: /^\/api\/access-sync$/, methods: { GET: (api, who, rid) => api.checkAccessSync(who, rid) } },
+  {
+    pattern: /^\/api\/roles$/,
+    methods: {
+      GET: (api, who, rid) => api.listRoles(who, rid),
+      POST: (api, who, rid, _id, body) => api.createRole(who, rid, body),
+    },
+  },
+  {
+    pattern: new RegExp(`^/api/roles/${ID}$`),
+    methods: {
+      GET: (api, who, rid, id) => api.getRole(who, rid, id),
+      PATCH: (api, who, rid, id, body) => api.updateRole(who, rid, id, body),
+      DELETE: (api, who, rid, id) => api.deleteRole(who, rid, id),
+    },
+  },
+  { pattern: /^\/api\/permissions$/, methods: { GET: (api, who, rid) => api.listPermissions(who, rid) } },
+];
+
+async function readBody(request: Request): Promise<{ ok: true; body: unknown } | { ok: false }> {
+  if (request.method === "GET" || request.method === "DELETE") return { ok: true, body: undefined };
+  const text = await request.text();
+  if (text.trim() === "") return { ok: true, body: undefined };
+  try {
+    return { ok: true, body: JSON.parse(text) as unknown };
+  } catch {
+    return { ok: false };
+  }
 }
 
 async function api(context: RequestContext, request: Request, path: string, email: string): Promise<Response> {
-  if (path !== "/api/me" && path !== "/api/health") {
-    return error(context, 404, ERROR_CODES.NOT_FOUND, "No endpoint exists at this path.");
+  for (const route of ROUTES) {
+    const match = route.pattern.exec(path);
+    if (!match) continue;
+    const handler = route.methods[request.method];
+    if (!handler) {
+      return error(context, 405, ERROR_CODES.METHOD_NOT_ALLOWED, "This endpoint does not accept this method.", {
+        Allow: Object.keys(route.methods).join(", "),
+      });
+    }
+    const parsed = await readBody(request);
+    if (!parsed.ok) return error(context, 400, ERROR_CODES.VALIDATION_FAILED, "The request body is not valid JSON.");
+    const body = await handler(studioApi(context.env), { email }, context.requestId, match[1] ?? "", parsed.body);
+    return Response.json(body, { status: httpStatus(body) });
   }
-  if (request.method !== "GET") {
-    return error(context, 405, ERROR_CODES.METHOD_NOT_ALLOWED, "This endpoint only accepts GET.", { Allow: "GET" });
-  }
-  const body =
-    path === "/api/me"
-      ? await studioApi(context.env).me({ email }, context.requestId)
-      : await studioApi(context.env).health(context.requestId);
-  return Response.json(body, { status: httpStatus(body) });
+  return error(context, 404, ERROR_CODES.NOT_FOUND, "No endpoint exists at this path.");
 }
 
 export default {

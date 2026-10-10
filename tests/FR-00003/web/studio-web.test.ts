@@ -3,7 +3,7 @@
 // is called with a test environment: a stand-in studio-api that records its
 // calls, a stand-in for the static assets, and Access public keys served from
 // a key pair the tests generate. No real Access token is used.
-import type { ApiResponse, StaffIdentity, StaffMember } from "@dungeon-destiny/contracts";
+import type { ApiResponse, SignedInPerson, StaffIdentity } from "@dungeon-destiny/contracts";
 import { SignJWT, exportJWK, generateKeyPair } from "jose";
 import type { JWK } from "jose";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,10 +43,10 @@ const studioApi = {
     calls.health += 1;
     return { status: "ok", code: null, message: "studio-api is running", data: null, meta: meta(requestId) };
   },
-  async me(identity: StaffIdentity, requestId: string): Promise<ApiResponse<StaffMember | null>> {
+  async me(identity: StaffIdentity, requestId: string): Promise<ApiResponse<SignedInPerson | null>> {
     calls.me.push(identity);
     if (identity.email === SUPERADMIN) {
-      return { status: "ok", code: null, message: "Signed in.", data: { email: identity.email, role: "superadmin" }, meta: meta(requestId) };
+      return { status: "ok", code: null, message: "Signed in.", data: { email: identity.email, displayName: "SuperAdmin", superadmin: true, roles: [], permissions: [] }, meta: meta(requestId) };
     }
     return { status: "error", code: "NOT_STAFF", message: "Not allowed.", data: null, meta: meta(requestId) };
   },
@@ -198,10 +198,11 @@ describe("FR-00003: studio-web Access token check", () => {
 
 describe("FR-00003: studio-web routes", () => {
   it("FR-00003: with a valid token for the SuperAdmin, GET /api/me returns the email address and the role superadmin", async () => {
-    const { response, body } = await callJson<StaffMember>("/api/me", header(await token()));
+    const { response, body } = await callJson<SignedInPerson>("/api/me", header(await token()));
     expect(response.status).toBe(200);
     expect(body.status).toBe("ok");
-    expect(body.data).toEqual({ email: SUPERADMIN, role: "superadmin" });
+    // FR-00004: GET /api/me returns the signed-in person with their permissions.
+    expect(body.data).toMatchObject({ email: SUPERADMIN, superadmin: true });
     expect(calls.me).toEqual([{ email: SUPERADMIN }]);
   });
 

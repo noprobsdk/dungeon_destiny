@@ -1,24 +1,11 @@
-/* FR-00003: Content Studio's base styles. Plain CSS (DD-020). */
+/* FR-00004: page background in the POC's parchment colour; everything else
+   comes from the Mantine theme in theme.ts. */
 :root {
-  color-scheme: light dark;
-  font-family: system-ui, sans-serif;
-  line-height: 1.5;
-}
-
-body {
-  margin: 0;
+  --mantine-color-body: #f4f0e7;
 }
 
 .page {
   max-width: 40rem;
   margin: 4rem auto;
   padding: 0 1rem;
-}
-
-.status-ok {
-  color: #1a7f37;
-}
-
-.status-down {
-  color: #cf222e;
 }

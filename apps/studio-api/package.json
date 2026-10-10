@@ -9,6 +9,11 @@
     "deploy:dev": "../../devops/deploy-studio-api.sh"
   },
   "dependencies": {
-    "@dungeon-destiny/contracts": "workspace:*"
+    "@dungeon-destiny/contracts": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.11"
   }
 }

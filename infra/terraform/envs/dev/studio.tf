@@ -39,6 +39,23 @@ resource "cloudflare_zero_trust_access_identity_provider" "one_time_pin" {
   config     = {}
 }
 
+# FR-00004: every active Content Studio user is a member of this group.
+# studio-api keeps its members in step with the active users through
+# Cloudflare's API (DD-021), so Terraform creates the group with the
+# SuperAdmin as its first member and then leaves its members alone.
+resource "cloudflare_zero_trust_access_group" "studio_users" {
+  account_id = var.cloudflare_account_id
+  name       = "Content Studio users"
+
+  include = [
+    { email = { email = var.studio_superadmin_email } },
+  ]
+
+  lifecycle {
+    ignore_changes = [include]
+  }
+}
+
 resource "cloudflare_zero_trust_access_application" "studio_web" {
   account_id                = var.cloudflare_account_id
   name                      = "Content Studio (dev)"
@@ -48,15 +65,18 @@ resource "cloudflare_zero_trust_access_application" "studio_web" {
   allowed_idps              = [cloudflare_zero_trust_access_identity_provider.one_time_pin.id]
   auto_redirect_to_identity = true
 
-  # Until the staff-users Feature Request, only the SuperAdmin may request a
-  # PIN. The policy is defined here, exclusive to this application, because
-  # the separate reusable-policy resource shows a change on every plan.
+  # FR-00004: only the SuperAdmin and the active users in the group may
+  # request a PIN (security by default). The policy is defined here,
+  # exclusive to this application.
   policies = [
     {
-      name       = "Content Studio SuperAdmin"
+      name       = "Content Studio users"
       decision   = "allow"
       precedence = 1
-      include    = [{ email = { email = var.studio_superadmin_email } }]
+      include = [
+        { email = { email = var.studio_superadmin_email } },
+        { group = { id = cloudflare_zero_trust_access_group.studio_users.id } },
+      ]
     },
   ]
 }
@@ -66,4 +86,24 @@ resource "cloudflare_zero_trust_access_application" "studio_web" {
 output "studio_web_access_aud" {
   description = "Audience (AUD) tag of the Content Studio Access application."
   value       = cloudflare_zero_trust_access_application.studio_web.aud
+}
+
+# FR-00004: Content D1, owned by studio-api (DD-017, DD-020). EU jurisdiction
+# keeps its data, including users' email addresses, inside the EU; it cannot
+# be changed later.
+resource "cloudflare_d1_database" "content" {
+  account_id   = var.cloudflare_account_id
+  name         = "dd-dev-content"
+  jurisdiction = "eu"
+}
+
+# Not secrets; copied into apps/studio-api/wrangler.jsonc after apply.
+output "content_d1_id" {
+  description = "ID of the dd-dev-content D1 database."
+  value       = cloudflare_d1_database.content.id
+}
+
+output "studio_users_group_id" {
+  description = "ID of the Access group \"Content Studio users\"."
+  value       = cloudflare_zero_trust_access_group.studio_users.id
 }

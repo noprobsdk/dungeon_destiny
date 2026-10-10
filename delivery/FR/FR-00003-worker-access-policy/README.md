@@ -3,7 +3,7 @@
 - **Status:** Pending documentation
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
-- **Tracking:** No GitHub Issue yet.
+- **Tracking:** [GitHub Issue #4](https://github.com/noprobsdk/dungeon_destiny/issues/4), milestone "Content Studio - Basic user management".
 
 ## 1. Purpose
 

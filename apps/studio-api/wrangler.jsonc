@@ -16,8 +16,32 @@
         "ENVIRONMENT": "dev",
         // Set at deploy time from the owner's private credential file with
         // --var; the deploy refuses to run without it. Empty lets nobody in.
-        "SUPERADMIN_EMAIL": ""
+        "SUPERADMIN_EMAIL": "",
+        // FR-00004: also set at deploy time from the credential file, because
+        // the account ID is kept out of the repository.
+        "CF_ACCOUNT_ID": "",
+        // FR-00004: Cloudflare's API, and the Access group "Content Studio
+        // users" that studio-api keeps in step with the active users. The
+        // group ID is not a secret; it comes from Terraform's output.
+        "CF_API_BASE": "https://api.cloudflare.com/client/v4",
+        "ACCESS_GROUP_ID": ""
       },
+      // FR-00004 (DD-021): the Cloudflare API token for the Access group,
+      // stored only as a Worker secret with `wrangler secret put`. A deploy
+      // fails without it.
+      "secrets": {
+        "required": ["CF_ACCESS_GROUP_TOKEN"]
+      },
+      // FR-00004: Content D1, bound only to studio-api (DD-017, DD-020). The
+      // database ID is not a secret; it comes from Terraform's output.
+      "d1_databases": [
+        {
+          "binding": "CONTENT_D1",
+          "database_name": "dd-dev-content",
+          "database_id": "00000000-0000-4000-8000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ],
       "version_metadata": {
         "binding": "CF_VERSION_METADATA"
       }

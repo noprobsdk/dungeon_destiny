@@ -2,6 +2,15 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-10: Tracking issue recorded
+
+- **Change:** Set the Tracking line to GitHub Issue #4, in the milestone
+  "Content Studio - Basic user management".
+- **Reason:** The project owner created the milestone for Feature Requests
+  FR-00000 to FR-00004, and the issue was created for it.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals.
+
 ## 2026-10-10: Accepted, moved to Pending documentation
 
 - **Change:** The project owner accepted the implementation against the

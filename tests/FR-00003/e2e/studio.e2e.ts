@@ -16,7 +16,8 @@ test("FR-00003: the SuperAdmin signs in and sees the signed-in page with the stu
   const page = await context.newPage();
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /welcome/i })).toBeVisible();
-  await expect(page.getByText(SUPERADMIN)).toBeVisible();
+  // FR-00004: the header also shows the email address; check the page itself.
+  await expect(page.getByRole("main").getByText(SUPERADMIN)).toBeVisible();
   await expect(page.getByText(/studio-api is running/i)).toBeVisible();
   await context.close();
 });

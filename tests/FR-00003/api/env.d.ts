@@ -5,4 +5,8 @@ declare namespace Cloudflare {
   interface GlobalProps {
     mainModule: typeof import("../../../apps/studio-api/src/index");
   }
+  // FR-00004: test-only binding with Content D1's migrations.
+  interface Env {
+    TEST_MIGRATIONS: import("cloudflare:test").D1Migration[];
+  }
 }

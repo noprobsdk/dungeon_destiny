@@ -4,5 +4,5 @@
     "lib": ["es2023", "dom"],
     "types": []
   },
-  "include": ["*.ts"]
+  "include": ["*.ts", "../../FR-00004/e2e/*.ts"]
 }

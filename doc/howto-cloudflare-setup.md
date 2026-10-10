@@ -6,7 +6,7 @@ Prepare a WSL machine and the Cloudflare account so that Terraform can manage
 Dungeon Destiny's Cloudflare infrastructure with its state in R2, and so that
 the Workers can be built, tested, and deployed, the GitHub Issues that track
 Feature Requests can be managed with the GitHub CLI, and Content Studio can be
-protected by Cloudflare Access.
+protected by Cloudflare Access, with its users kept in an Access group.
 
 This guide is the main source for these steps. [FR-00000](../delivery/FR/FR-00000-terraform-setup/README.md)
 implements and verifies it, and `devops/README.md` links here.
@@ -37,6 +37,7 @@ Cloudflare resources other than the state bucket.
 | R2 Access Key ID and Secret Access Key | Cloudflare dashboard, step 5. |
 | SuperAdmin email address | The email address of the Content Studio SuperAdmin, chosen by the project owner (FR-00003). |
 | Zero Trust team name | Chosen by the project owner in step 11. |
+| Access group API token | Cloudflare dashboard, step 13 (FR-00004). Stored only as a Worker secret. |
 
 ## Procedure
 
@@ -51,7 +52,7 @@ see [`devops/README.md`](../devops/README.md):
 devops/onboarding.sh
 ```
 
-The dashboard steps 3 to 7 and 11 are always done by hand.
+The dashboard steps 3 to 7, 11, and 13 are always done by hand.
 
 ### 1. Install Terraform
 
@@ -211,6 +212,36 @@ needs with `sudo`:
 pnpm exec playwright install --with-deps chromium
 ```
 
+### 13. Create the Access group token for studio-api
+
+`studio-api` keeps the Access group "Content Studio users" in step with
+Content Studio's active users, so it needs a Cloudflare API token (DD-021).
+Do this after `terraform apply` has created the `dd-dev-studio-api` Worker and
+the Access group.
+
+1. In the Cloudflare dashboard, open **Manage account** > **Account API
+   Tokens** and choose **Create Token**, then **Create Custom Token**.
+2. Name it `dd-dev-studio-api access group`.
+3. Under **Permissions**, add only **Access: Organizations, Identity
+   Providers, and Groups** with **Edit**. Add nothing else.
+4. Create the token and keep the page open. The token is shown only once.
+
+Store it as the Worker secret straight away. Working directory: the
+repository root. Wrangler asks for the value and does not show it; paste the
+token at the prompt, never on the command line:
+
+```bash
+source ~/.config/dungeon-destiny/cloudflare.env
+pnpm --filter @dungeon-destiny/studio-api exec wrangler secret put CF_ACCESS_GROUP_TOKEN --env dev
+```
+
+Then close the dashboard page. Do not store the token anywhere else: not in
+the credential file, a note, or this repository. Storing a secret deploys a
+new version of `studio-api` at once.
+
+To rotate the token, create a new one the same way, store it with the same
+command, and then delete the old token in the dashboard.
+
 ## Verification
 
 Working directory: any.
@@ -270,6 +301,9 @@ Expected result: the last line reads `0 failed`.
   it in the Cloudflare dashboard before continuing.
 - **Zero Trust not turned on:** repeat step 11; the onboarding script reports
   HTTP 403 until it is done.
+- **Access group token lost or exposed:** create a new token (step 13), store
+  it with `wrangler secret put`, and delete the old one. Content Studio reports
+  "Cloudflare Access could not be updated" until a working token is stored.
 - **The SuperAdmin cannot receive the one-time PIN:** this is the emergency
   route. Sign in to the Cloudflare dashboard with your own Cloudflare account,
   which does not use Access. Change `STUDIO_SUPERADMIN_EMAIL` in the credential
@@ -289,6 +323,9 @@ Expected result: the last line reads `0 failed`.
   expose credentials.
 - Keep the SuperAdmin email address only in the credential file; the
   repository is public.
+- Keep the Access group token only as the `CF_ACCESS_GROUP_TOKEN` Worker
+  secret (DD-021). It can change Access sign-in settings, so never paste it
+  anywhere else.
 
 ## References
 
@@ -305,6 +342,9 @@ Expected result: the last line reads `0 failed`.
 - [Terraform remote backend on R2](https://developers.cloudflare.com/terraform/advanced-topics/remote-backend/)
 - [FR-00003: Worker access policy](../delivery/FR/FR-00003-worker-access-policy/README.md)
 - [Cloudflare Zero Trust: get started](https://developers.cloudflare.com/cloudflare-one/setup/)
+- [FR-00004: Content D1 and user model](../delivery/FR/FR-00004-content-d1-user-model/README.md)
+- [Cloudflare: create an API token](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/)
+- [Cloudflare Workers: secrets](https://developers.cloudflare.com/workers/configuration/secrets/)
 - [Cloudflare Zero Trust plans](https://www.cloudflare.com/plans/zero-trust-services/)
 - [Playwright: install browsers](https://playwright.dev/docs/browsers)
 - [NodeSource Node.js installation](https://github.com/nodesource/distributions/blob/master/DEV_README.md)

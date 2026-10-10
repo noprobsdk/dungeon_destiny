@@ -14,6 +14,8 @@ set -u
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT="$REPO_ROOT/devops/deploy-studio-api.sh"
 FAKE_SUPERADMIN="superadmin-fake@example.invalid"
+# FR-00004: the account ID is passed too, and kept out of the output.
+FAKE_ACCOUNT="fakeaccountid0123456789abcdef0000"
 
 passed=0
 failed=0
@@ -38,7 +40,10 @@ setup() {
 #!/usr/bin/env bash
 { echo "cwd=$PWD"; printf 'arg=%s\n' "$@"; } >>"$WRANGLER_LOG"
 for arg in "$@"; do
-  case "$arg" in SUPERADMIN_EMAIL:*) echo "env.SUPERADMIN_EMAIL (\"${arg#SUPERADMIN_EMAIL:}\")      Environment Variable" ;; esac
+  case "$arg" in
+    SUPERADMIN_EMAIL:*) echo "env.SUPERADMIN_EMAIL (\"${arg#SUPERADMIN_EMAIL:}\")      Environment Variable" ;;
+    CF_ACCOUNT_ID:*) echo "env.CF_ACCOUNT_ID (\"${arg#CF_ACCOUNT_ID:}\")      Environment Variable" ;;
+  esac
 done
 echo "Uploaded dd-dev-studio-api"
 exit "$FAKE_WRANGLER_EXIT"
@@ -51,7 +56,7 @@ teardown() {
 }
 
 run_script() {
-  OUTPUT="$(env -u STUDIO_SUPERADMIN_EMAIL PATH="$FAKEBIN:$PATH" "$@" bash "$SCRIPT" 2>&1)"
+  OUTPUT="$(env -u STUDIO_SUPERADMIN_EMAIL -u CLOUDFLARE_ACCOUNT_ID PATH="$FAKEBIN:$PATH" "$@" bash "$SCRIPT" 2>&1)"
   STATUS=$?
 }
 
@@ -74,7 +79,7 @@ test_refuses_without_superadmin() {
 test_deploys_with_var_and_tag() {
   local name="FR-00003: the studio-api deploy runs wrangler deploy --env dev with a dev tag and the SuperAdmin email as a variable"
   setup
-  run_script STUDIO_SUPERADMIN_EMAIL="$FAKE_SUPERADMIN"
+  run_script STUDIO_SUPERADMIN_EMAIL="$FAKE_SUPERADMIN" CLOUDFLARE_ACCOUNT_ID="$FAKE_ACCOUNT"
   if [ "$STATUS" -ne 0 ]; then
     fail "$name" "The script failed. Output was:"$'\n'"$OUTPUT"
   elif ! grep -qx "cwd=$REPO_ROOT/apps/studio-api" "$WRANGLER_LOG"; then
@@ -94,7 +99,7 @@ test_deploys_with_var_and_tag() {
 test_output_never_contains_email() {
   local name="FR-00003: the studio-api deploy output never contains the SuperAdmin email address"
   setup
-  run_script STUDIO_SUPERADMIN_EMAIL="$FAKE_SUPERADMIN"
+  run_script STUDIO_SUPERADMIN_EMAIL="$FAKE_SUPERADMIN" CLOUDFLARE_ACCOUNT_ID="$FAKE_ACCOUNT"
   if printf '%s\n' "$OUTPUT" | grep -qF "$FAKE_SUPERADMIN"; then
     fail "$name" "The email address appeared in the output."
   elif ! printf '%s\n' "$OUTPUT" | grep -q 'Uploaded dd-dev-studio-api'; then
@@ -109,9 +114,37 @@ test_reports_wrangler_failure() {
   local name="FR-00003: the studio-api deploy fails when wrangler fails"
   setup
   export FAKE_WRANGLER_EXIT=3
-  run_script STUDIO_SUPERADMIN_EMAIL="$FAKE_SUPERADMIN"
+  run_script STUDIO_SUPERADMIN_EMAIL="$FAKE_SUPERADMIN" CLOUDFLARE_ACCOUNT_ID="$FAKE_ACCOUNT"
   if [ "$STATUS" -eq 0 ]; then
     fail "$name" "The script succeeded although wrangler failed."
+  else
+    pass "$name"
+  fi
+  teardown
+}
+
+test_refuses_without_account_id() {
+  local name="FR-00004: the studio-api deploy refuses to run without CLOUDFLARE_ACCOUNT_ID"
+  setup
+  run_script STUDIO_SUPERADMIN_EMAIL="$FAKE_SUPERADMIN"
+  if [ "$STATUS" -eq 0 ] || [ -s "$WRANGLER_LOG" ]; then
+    fail "$name" "The script ran without CLOUDFLARE_ACCOUNT_ID."
+  elif ! printf '%s\n' "$OUTPUT" | grep -q 'CLOUDFLARE_ACCOUNT_ID'; then
+    fail "$name" "The message does not name CLOUDFLARE_ACCOUNT_ID."
+  else
+    pass "$name"
+  fi
+  teardown
+}
+
+test_passes_account_id_masked() {
+  local name="FR-00004: the studio-api deploy passes the account ID as CF_ACCOUNT_ID and never prints it"
+  setup
+  run_script STUDIO_SUPERADMIN_EMAIL="$FAKE_SUPERADMIN" CLOUDFLARE_ACCOUNT_ID="$FAKE_ACCOUNT"
+  if ! grep -qx "arg=CF_ACCOUNT_ID:$FAKE_ACCOUNT" "$WRANGLER_LOG" 2>/dev/null; then
+    fail "$name" "The account ID was not passed as --var CF_ACCOUNT_ID."
+  elif printf '%s\n' "$OUTPUT" | grep -qF "$FAKE_ACCOUNT"; then
+    fail "$name" "The account ID appeared in the output."
   else
     pass "$name"
   fi
@@ -125,6 +158,8 @@ test_refuses_without_superadmin
 test_deploys_with_var_and_tag
 test_output_never_contains_email
 test_reports_wrangler_failure
+test_refuses_without_account_id
+test_passes_account_id_masked
 
 echo
 echo "$passed passed, $failed failed"

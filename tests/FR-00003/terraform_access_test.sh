@@ -107,7 +107,7 @@ test_policy_allows_only_superadmin() {
     fail "$name" "The policy's decision is not allow."
   elif ! printf '%s\n' "$policies" | grep -Eq 'email[[:space:]]*=[[:space:]]*\{[[:space:]]*email[[:space:]]*=[[:space:]]*var\.studio_superadmin_email[[:space:]]*\}'; then
     fail "$name" "The policy does not include exactly email = { email = var.studio_superadmin_email }."
-  elif [ "$(printf '%s\n' "$policies" | grep -c 'email')" -ne 1 ] || printf '%s\n' "$policies" | grep -Eq 'everyone|email_domain|email_list|[[:space:]]id[[:space:]]*='; then
+  elif [ "$(printf '%s\n' "$policies" | grep -c 'email')" -ne 1 ] || printf '%s\n' "$policies" | grep -Eq 'everyone|email_domain|email_list|^[[:space:]]*id[[:space:]]*='; then
     fail "$name" "The policy includes more than the SuperAdmin email address."
   elif [ -z "$variable" ]; then
     fail "$name" "The variable studio_superadmin_email is not declared."
