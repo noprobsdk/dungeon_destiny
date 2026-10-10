@@ -1,6 +1,6 @@
 # FR-00004: Content D1 and user model
 
-- **Status:** In Specification
+- **Status:** In Progress
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** No GitHub Issue yet.
@@ -94,8 +94,7 @@ This Feature Request does not create or change:
   menu, and the role and permission model of the spatie/laravel-permission
   package.
 
-Design baseline commit: not yet set; it is the commit that contains this
-Feature Request.
+Design baseline commit: `d6a2a71`.
 
 Source-document readiness gate: passes for this scope. This Feature Request
 closes the open decision on Worker secret management for its own secret, in
