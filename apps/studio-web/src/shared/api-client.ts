@@ -53,6 +53,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly code: ErrorCode | null,
+    // FR-00004: for VALIDATION_FAILED, the field-by-field reasons.
+    readonly details: unknown = null,
   ) {
     super(message);
   }
@@ -62,6 +64,6 @@ export class ApiError extends Error {
 export async function callApi<T>(method: string, path: string, body?: unknown): Promise<ApiResponse<T>> {
   const result = await sendApi<T>(method, path, body);
   if (result.kind !== "response") throw new ApiError("Content Studio could not be reached. Try again.", null);
-  if (result.body.status !== "ok") throw new ApiError(result.body.message, result.body.code);
+  if (result.body.status !== "ok") throw new ApiError(result.body.message, result.body.code, result.body.data);
   return result.body;
 }

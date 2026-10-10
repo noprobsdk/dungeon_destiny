@@ -4,12 +4,14 @@
 // only while no user has it.
 import { Button, Checkbox, Group, LoadingOverlay, Modal, Stack, Text, TextInput, Textarea, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { roleInput } from "@dungeon-destiny/contracts";
 import type { PermissionView, RoleView, SignedInPerson } from "@dungeon-destiny/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { MUTED } from "../../app/theme";
 import { callApi } from "../../shared/api-client";
+import { serverFieldErrors, validateWith } from "../../shared/form";
 import { LoadingRows, can, notifyFailed, notifySaved } from "../../shared/ui";
 
 type Values = { name: string; description: string; permissionNames: string[] };
@@ -40,7 +42,10 @@ export function RolePage({ person }: { person: SignedInPerson }) {
     queryFn: () => callApi<PermissionView[]>("GET", "/api/permissions"),
   });
 
-  const form = useForm<Values>({ initialValues: { name: "", description: "", permissionNames: [] } });
+  const form = useForm<Values>({
+    initialValues: { name: "", description: "", permissionNames: [] },
+    validate: validateWith<Values>(roleInput),
+  });
   const loaded = role.data?.data;
   useEffect(() => {
     if (loaded) {
@@ -58,9 +63,14 @@ export function RolePage({ person }: { person: SignedInPerson }) {
       notifySaved(response.message);
       await queryClient.invalidateQueries({ queryKey: ["roles"] });
       await queryClient.invalidateQueries({ queryKey: ["permissions"] });
-      if (isNew && response.data) await navigate(`/roles/${response.data.id}`);
+      // FR-00004: back to the list after a successful save.
+      await navigate("/roles");
     },
-    onError: (error) => notifyFailed(error.message),
+    onError: (error) => {
+      const fields = serverFieldErrors(error);
+      form.setErrors(fields);
+      notifyFailed(Object.keys(fields).length > 0 ? `${error.message} Check the highlighted fields.` : error.message);
+    },
   });
 
   const remove = useMutation({
@@ -85,12 +95,12 @@ export function RolePage({ person }: { person: SignedInPerson }) {
     <Stack maw={720} pos="relative">
       <LoadingOverlay visible={busy} zIndex={10} />
       <Title order={1}>{isNew ? "New role" : `Role: ${loaded?.name ?? ""}`}</Title>
-      <form onSubmit={form.onSubmit((values) => save.mutate(values))}>
+      <form noValidate onSubmit={form.onSubmit((values) => save.mutate(values), () => notifyFailed("Check the highlighted fields."))}>
         <Stack>
           <TextInput
             label="Role name"
             description="Lower-case letters, digits, and hyphens, for example content-author."
-            required
+            withAsterisk
             disabled={!manage}
             {...form.getInputProps("name")}
           />
@@ -114,24 +124,27 @@ export function RolePage({ person }: { person: SignedInPerson }) {
               ))
             )}
           </Checkbox.Group>
-          {manage && (
-            <Group>
+          <Group>
+            {manage && (
               <Button type="submit" loading={save.isPending} disabled={busy}>
                 Save
               </Button>
-              {!isNew && (
-                <Button
-                  variant="outline"
-                  color="red"
-                  onClick={() => setConfirming(true)}
-                  disabled={busy || (loaded?.userCount ?? 0) > 0}
-                  title={(loaded?.userCount ?? 0) > 0 ? "Remove this role from its users first." : undefined}
-                >
-                  Delete
-                </Button>
-              )}
-            </Group>
-          )}
+            )}
+            {manage && !isNew && (
+              <Button
+                variant="outline"
+                color="red"
+                onClick={() => setConfirming(true)}
+                disabled={busy || (loaded?.userCount ?? 0) > 0}
+                title={(loaded?.userCount ?? 0) > 0 ? "Remove this role from its users first." : undefined}
+              >
+                Delete
+              </Button>
+            )}
+            <Button component={Link} to="/roles" variant="default" disabled={busy}>
+              Back
+            </Button>
+          </Group>
         </Stack>
       </form>
       <Modal opened={confirming} onClose={() => setConfirming(false)} title="Delete this role?">

@@ -40,7 +40,7 @@ export const roleInput = z
       .trim()
       .min(1, "Enter a role name.")
       .max(60)
-      .regex(/^[a-z0-9-]+$/, "Use lower-case letters, digits, and hyphens."),
+      .regex(/^[a-z0-9-]+$/, "Use only lower-case letters, digits, and hyphens, for example 3d-editor."),
     description: z.string().trim().max(500),
     permissionNames: z.array(z.enum(PERMISSION_NAMES as [string, ...string[]])).max(200),
   })

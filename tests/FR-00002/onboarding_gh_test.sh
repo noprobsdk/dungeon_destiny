@@ -11,6 +11,11 @@
 
 set -u
 
+# FR-00004: the tests use only their own fake credential file, so values
+# loaded from the owner's credential file in this shell are removed first.
+unset CLOUDFLARE_EMAIL CLOUDFLARE_API_KEY CLOUDFLARE_ACCOUNT_ID AWS_ACCESS_KEY_ID \
+  AWS_SECRET_ACCESS_KEY STUDIO_SUPERADMIN_EMAIL AWS_ENDPOINT_URL_S3
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SOURCE_SCRIPT="$REPO_ROOT/devops/onboarding.sh"
 FAKE_TOKEN="gho_FAKETOKEN0123456789abcdef"

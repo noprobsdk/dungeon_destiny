@@ -95,6 +95,11 @@ resource "cloudflare_d1_database" "content" {
   account_id   = var.cloudflare_account_id
   name         = "dd-dev-content"
   jurisdiction = "eu"
+
+  # Cloudflare's default, stated so Terraform matches what Cloudflare returns.
+  read_replication = {
+    mode = "disabled"
+  }
 }
 
 # Not secrets; copied into apps/studio-api/wrangler.jsonc after apply.

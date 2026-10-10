@@ -4,11 +4,13 @@
 // values after an error.
 import { Badge, Button, Checkbox, Group, LoadingOverlay, Modal, Stack, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { createUserInput } from "@dungeon-destiny/contracts";
 import type { RoleView, SignedInPerson, UserView } from "@dungeon-destiny/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { callApi } from "../../shared/api-client";
+import { serverFieldErrors, validateWith } from "../../shared/form";
 import { LoadingRows, can, notifyFailed, notifySaved } from "../../shared/ui";
 
 type Values = { email: string; displayName: string; roleIds: string[] };
@@ -32,7 +34,10 @@ export function UserPage({ person }: { person: SignedInPerson }) {
     enabled: can(person, "roles.view"),
   });
 
-  const form = useForm<Values>({ initialValues: { email: "", displayName: "", roleIds: [] } });
+  const form = useForm<Values>({
+    initialValues: { email: "", displayName: "", roleIds: [] },
+    validate: validateWith<Values>(createUserInput),
+  });
   const loaded = user.data?.data;
   useEffect(() => {
     if (loaded) {
@@ -49,9 +54,14 @@ export function UserPage({ person }: { person: SignedInPerson }) {
     onSuccess: async (response) => {
       notifySaved(response.message);
       await queryClient.invalidateQueries({ queryKey: ["users"] });
-      if (isNew && response.data) await navigate(`/users/${response.data.id}`);
+      // FR-00004: back to the list after a successful save.
+      await navigate("/users");
     },
-    onError: (error) => notifyFailed(error.message),
+    onError: (error) => {
+      const fields = serverFieldErrors(error);
+      form.setErrors(fields);
+      notifyFailed(Object.keys(fields).length > 0 ? `${error.message} Check the highlighted fields.` : error.message);
+    },
   });
 
   const status = useMutation({
@@ -79,10 +89,10 @@ export function UserPage({ person }: { person: SignedInPerson }) {
         <Title order={1}>{isNew ? "New user" : (loaded?.displayName ?? "User")}</Title>
         {!isNew && <Badge color={active ? "green" : "red"}>{active ? "Active" : "Deactivated"}</Badge>}
       </Group>
-      <form onSubmit={form.onSubmit((values) => save.mutate(values))}>
+      <form noValidate onSubmit={form.onSubmit((values) => save.mutate(values), () => notifyFailed("Check the highlighted fields."))}>
         <Stack>
-          <TextInput label="Email" type="email" required disabled={!manage} {...form.getInputProps("email")} />
-          <TextInput label="Name" required disabled={!manage} {...form.getInputProps("displayName")} />
+          <TextInput label="Email" type="email" withAsterisk disabled={!manage} {...form.getInputProps("email")} />
+          <TextInput label="Name" withAsterisk disabled={!manage} {...form.getInputProps("displayName")} />
           <Checkbox.Group label="Roles" {...form.getInputProps("roleIds")}>
             <Stack gap="xs" mt="xs">
               {roles.isPending && can(person, "roles.view") ? (
@@ -94,23 +104,27 @@ export function UserPage({ person }: { person: SignedInPerson }) {
               )}
             </Stack>
           </Checkbox.Group>
-          {manage && (
-            <Group>
+          <Group>
+            {manage && (
               <Button type="submit" loading={save.isPending} disabled={busy}>
                 Save
               </Button>
-              {!isNew &&
-                (active ? (
-                  <Button variant="outline" color="red" onClick={() => setConfirming(true)} disabled={busy}>
-                    Deactivate
-                  </Button>
-                ) : (
-                  <Button variant="outline" loading={status.isPending} onClick={() => status.mutate("reactivate")}>
-                    Reactivate
-                  </Button>
-                ))}
-            </Group>
-          )}
+            )}
+            {manage &&
+              !isNew &&
+              (active ? (
+                <Button variant="outline" color="red" onClick={() => setConfirming(true)} disabled={busy}>
+                  Deactivate
+                </Button>
+              ) : (
+                <Button variant="outline" loading={status.isPending} onClick={() => status.mutate("reactivate")}>
+                  Reactivate
+                </Button>
+              ))}
+            <Button component={Link} to="/users" variant="default" disabled={busy}>
+              Back
+            </Button>
+          </Group>
         </Stack>
       </form>
       <Modal opened={confirming} onClose={() => setConfirming(false)} title="Deactivate this user?">

@@ -24,7 +24,7 @@
         // users" that studio-api keeps in step with the active users. The
         // group ID is not a secret; it comes from Terraform's output.
         "CF_API_BASE": "https://api.cloudflare.com/client/v4",
-        "ACCESS_GROUP_ID": ""
+        "ACCESS_GROUP_ID": "3f332e12-c0d3-4cfd-9b09-93a49dfbe2b2"
       },
       // FR-00004 (DD-021): the Cloudflare API token for the Access group,
       // stored only as a Worker secret with `wrangler secret put`. A deploy
@@ -38,7 +38,7 @@
         {
           "binding": "CONTENT_D1",
           "database_name": "dd-dev-content",
-          "database_id": "00000000-0000-4000-8000-000000000000",
+          "database_id": "922c553e-8ccf-45e1-a98d-f0096a0be394",
           "migrations_dir": "migrations"
         }
       ],

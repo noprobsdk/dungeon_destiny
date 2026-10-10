@@ -1,8 +1,8 @@
 // FR-00004: the Users list, with search and a status filter. The SuperAdmin,
 // defined in configuration, is shown as a fixed row.
-import { Badge, Button, Group, SegmentedControl, Stack, Table, Text, TextInput, Title } from "@mantine/core";
-import type { SignedInPerson, UserView } from "@dungeon-destiny/contracts";
-import { useQuery } from "@tanstack/react-query";
+import { Alert, Badge, Button, Group, List, SegmentedControl, Stack, Table, Text, TextInput, Title } from "@mantine/core";
+import type { AccessSyncReport, SignedInPerson, UserView } from "@dungeon-destiny/contracts";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router";
 import { callApi } from "../../shared/api-client";
@@ -12,6 +12,9 @@ export function UsersPage({ person }: { person: SignedInPerson }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const users = useQuery({ queryKey: ["users"], queryFn: () => callApi<UserView[]>("GET", "/api/users") });
+  // FR-00004: compares the Access group "Content Studio users" with the active users.
+  const check = useMutation({ mutationFn: () => callApi<AccessSyncReport>("GET", "/api/access-sync") });
+  const report = check.data?.data;
   const list = (users.data?.data ?? []).filter(
     (user) =>
       (status === "all" || user.status === status) &&
@@ -23,11 +26,52 @@ export function UsersPage({ person }: { person: SignedInPerson }) {
       <Group justify="space-between">
         <Title order={1}>Users</Title>
         {can(person, "users.manage") && (
-          <Button component={Link} to="/users/new">
-            New user
-          </Button>
+          <Group>
+            <Button variant="default" loading={check.isPending} onClick={() => check.mutate()}>
+              Check Access
+            </Button>
+            <Button component={Link} to="/users/new">
+              New user
+            </Button>
+          </Group>
         )}
       </Group>
+      {check.isError && (
+        <Alert color="red" title="Access could not be checked">
+          {check.error.message}
+        </Alert>
+      )}
+      {report && (
+        <Alert color={report.inSync ? "green" : "red"} title={report.inSync ? "Access matches the users" : "Access does not match the users"}>
+          {report.inSync ? (
+            <Text size="sm">Every active user is in the Access group, and nobody else is.</Text>
+          ) : (
+            <Stack gap="xs">
+              {report.missingFromGroup.length > 0 && (
+                <div>
+                  <Text size="sm">Active users missing from the Access group:</Text>
+                  <List size="sm">
+                    {report.missingFromGroup.map((email) => (
+                      <List.Item key={email}>{email}</List.Item>
+                    ))}
+                  </List>
+                </div>
+              )}
+              {report.notActiveUsers.length > 0 && (
+                <div>
+                  <Text size="sm">In the Access group but not active users:</Text>
+                  <List size="sm">
+                    {report.notActiveUsers.map((email) => (
+                      <List.Item key={email}>{email}</List.Item>
+                    ))}
+                  </List>
+                </div>
+              )}
+              <Text size="sm">Saving any user change sends the full list to Access again and corrects this.</Text>
+            </Stack>
+          )}
+        </Alert>
+      )}
       <Group>
         <TextInput placeholder="Search by email or name" value={search} onChange={(e) => setSearch(e.currentTarget.value)} />
         <SegmentedControl
