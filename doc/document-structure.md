@@ -11,6 +11,7 @@ doc/
 ├── howto.md
 ├── howto-feature-request.md
 ├── howto-cloudflare-setup.md
+├── howto-content-d1.md
 ├── grill-me.md
 ├── test-driven-development.md
 ├── 01-game-design/

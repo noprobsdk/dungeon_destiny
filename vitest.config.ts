@@ -16,6 +16,11 @@ import { defineConfig } from "vitest/config";
 // every studio-api test.
 const contentMigrations = await readD1Migrations("./apps/studio-api/migrations");
 
+// FR-00004: the first request in a Workers-runtime project starts the Worker,
+// which can take longer than Vitest's 5-second default when the repository is
+// on a Windows drive under WSL. The tests themselves stay fast.
+const WORKER_TEST_TIMEOUT = 30_000;
+
 export default defineConfig({
   test: {
     projects: [
@@ -25,7 +30,7 @@ export default defineConfig({
             wrangler: { configPath: "./apps/gateway/wrangler.jsonc", environment: "dev" },
           }),
         ],
-        test: { name: "gateway", include: ["tests/FR-00001/**/*.test.ts"] },
+        test: { name: "gateway", include: ["tests/FR-00001/**/*.test.ts"], testTimeout: WORKER_TEST_TIMEOUT },
       },
       {
         plugins: [
@@ -45,7 +50,11 @@ export default defineConfig({
             },
           }),
         ],
-        test: { name: "studio-api", include: ["tests/FR-00003/api/**/*.test.ts", "tests/FR-00004/api/**/*.test.ts"] },
+        test: {
+          name: "studio-api",
+          include: ["tests/FR-00003/api/**/*.test.ts", "tests/FR-00004/api/**/*.test.ts"],
+          testTimeout: WORKER_TEST_TIMEOUT,
+        },
       },
       {
         plugins: [
@@ -65,7 +74,11 @@ export default defineConfig({
             },
           }),
         ],
-        test: { name: "studio-web", include: ["tests/FR-00003/web/**/*.test.ts", "tests/FR-00004/web/**/*.test.ts"] },
+        test: {
+          name: "studio-web",
+          include: ["tests/FR-00003/web/**/*.test.ts", "tests/FR-00004/web/**/*.test.ts"],
+          testTimeout: WORKER_TEST_TIMEOUT,
+        },
       },
       {
         plugins: [react()],

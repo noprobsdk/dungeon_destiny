@@ -15,6 +15,10 @@
 # Exit status: 0 when every check passes, 1 when any check still fails,
 # 2 for an unknown argument.
 
+# The check_* and fix_* functions are called by name from a loop, which
+# ShellCheck cannot follow (SC2317 in 0.9 and 0.10, SC2329 in 0.11).
+# shellcheck disable=SC2317,SC2329
+
 set -u
 
 readonly MIN_TERRAFORM="1.11.0"

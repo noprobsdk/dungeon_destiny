@@ -37,7 +37,8 @@ Terraform change.
 5. Apply Terraform, apply the migrations to Content D1, and deploy both
    Workers.
 6. Verify the deployed Content Studio with the project owner.
-7. Add the commands to `AGENTS.md` and the database how-to.
+7. Add the commands to `AGENTS.md`, the database how-to, and the query
+   script, writing the script's tests first.
 8. Complete `implementation_report.md` and move to `In Review`.
 9. After acceptance, hand over to documentation and as-built.
 
@@ -63,6 +64,8 @@ This Feature Request creates or changes:
   token;
 - DD-021, recording how Worker secrets are managed;
 - a how-to for viewing Content D1;
+- `devops/db/query.sh`, a read-only script that runs named Content D1
+  queries and single `SELECT` statements;
 - the FR-00004 tests in `tests/FR-00004/`; and
 - the commands in `AGENTS.md`.
 
@@ -165,6 +168,11 @@ Blockers: none.
   as the primary colour, parchment backgrounds, and a dark side menu. Text
   and background colour pairs meet WCAG AA contrast for normal text.
 - Responses use the standard response format (DD-019).
+- `devops/db/query.sh` only reads. It runs named queries (`tables`, `users`,
+  `roles`, `permissions`, `audit`, and `migrations`) and, with `sql`, one
+  `SELECT` statement, refusing anything else. It reads `dd-dev-content` in
+  Cloudflare by default, and the local database with `--local`. The named
+  queries leave out email addresses (approved 2026-10-13).
 
 ## 8. Data model and Content Studio
 
@@ -268,6 +276,11 @@ Write these checks before the implementation and confirm they fail first:
   group.
 - `CF_ACCESS_GROUP_TOKEN` is declared as a required secret of `studio-api`.
 - No email address or credential is present in tracked files.
+- `devops/db/query.sh` runs each named query; `sql` runs one `SELECT`
+  statement and refuses any other statement, more than one statement, or an
+  empty one; it uses Cloudflare by default and the local database with
+  `--local`; it refuses Cloudflare when the credentials are not loaded; and
+  no named query selects an email address.
 
 Every check is kept as a test in `tests/FR-00004/`, named after the check it
 proves. The end-to-end test extends FR-00003's, with tokens from the local

@@ -2,6 +2,19 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-13: Query script added to scope
+
+- **Change:** Added `devops/db/query.sh` to the scope, the approved decisions,
+  the implementation sequence (step 7), and the Section 14 checks: a read-only
+  script that runs named Content D1 queries (`tables`, `users`, `roles`,
+  `permissions`, `audit`, and `migrations`) and, with `sql`, one `SELECT`
+  statement, reading Cloudflare by default and the local database with
+  `--local`, with no email addresses in the named queries.
+- **Reason:** The project owner asked for an easy way to query Content D1 and
+  chose to extend FR-00004 rather than open a new Feature Request.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** `README.md` matches its approved proposal.
+
 ## 2026-10-10: Tracking issue recorded
 
 - **Change:** Set the Tracking line to GitHub Issue #5, in the milestone

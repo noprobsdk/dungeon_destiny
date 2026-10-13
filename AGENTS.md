@@ -26,7 +26,7 @@ devops/onboarding.sh --check
 
 The manual setup steps are in `doc/howto-cloudflare-setup.md`.
 
-### Terraform (FR-00000, FR-00001, FR-00003)
+### Terraform (FR-00000, FR-00001, FR-00003, FR-00004)
 
 Load the credentials, the R2 address, and the Terraform variables into the
 current shell, then run Terraform for the `dev` environment. Never print the
@@ -74,7 +74,7 @@ source ~/.config/dungeon-destiny/cloudflare.env
 pnpm --filter @dungeon-destiny/gateway run deploy:dev
 ```
 
-### Content Studio (FR-00003)
+### Content Studio (FR-00003, FR-00004)
 
 Content Studio is the `studio-web` Worker (React pages and the Cloudflare
 Access token check) and the `studio-api` Worker (no public address, typed RPC).
@@ -90,8 +90,11 @@ pnpm --filter @dungeon-destiny/studio-web run types
 ```
 
 Deploy `studio-api` first, then `studio-web`. The `studio-api` deploy reads the
-SuperAdmin email address from the credential file, refuses to run without it,
-and masks it in the output. A deploy changes live Workers and needs explicit
+SuperAdmin email address and the Cloudflare account ID from the credential
+file, refuses to run without them, and masks them in the output. Wrangler
+refuses the deploy when the `CF_ACCESS_GROUP_TOKEN` secret is missing; the
+owner stores it by hand (`doc/howto-cloudflare-setup.md`, step 13), and agents
+never read, set, or print it. A deploy changes live Workers and needs explicit
 approval.
 
 ```bash
@@ -99,6 +102,46 @@ source ~/.config/dungeon-destiny/cloudflare.env
 pnpm --filter @dungeon-destiny/studio-api run deploy:dev
 pnpm --filter @dungeon-destiny/studio-web run deploy:dev
 ```
+
+### Content D1 (FR-00004)
+
+Content D1 (`dd-dev-content`) is bound only to `studio-api`. Its schema is
+`apps/studio-api/src/db/schema.ts`; `drizzle-kit` generates the next numbered
+migration into `apps/studio-api/migrations/`, and Wrangler applies it. Follow
+`doc/08-technical/database-change-management.md`, and never edit a migration
+that has been applied to Cloudflare.
+
+```bash
+pnpm --filter @dungeon-destiny/studio-api exec drizzle-kit generate --name <name>
+pnpm --filter @dungeon-destiny/studio-api exec wrangler d1 migrations apply dd-dev-content --local --env dev
+```
+
+List and apply the migrations in Cloudflare. Apply them before deploying the
+`studio-api` code that needs them. Applying a migration to Cloudflare changes
+the live database and needs explicit approval; listing changes nothing.
+
+```bash
+source ~/.config/dungeon-destiny/cloudflare.env
+pnpm --filter @dungeon-destiny/studio-api exec wrangler d1 migrations list dd-dev-content --remote --env dev
+pnpm --filter @dungeon-destiny/studio-api exec wrangler d1 migrations apply dd-dev-content --remote --env dev
+```
+
+Read Content D1 with `devops/db/query.sh`. It never writes, reads Cloudflare
+by default and the local database with `--local`, and runs a named query or
+one `SELECT` statement. Named queries leave out email addresses; do not share
+output that contains them. Running it needs no approval.
+
+```bash
+source ~/.config/dungeon-destiny/cloudflare.env
+devops/db/query.sh users
+devops/db/query.sh --local tables
+devops/db/query.sh sql "SELECT name, area FROM permissions"
+```
+
+The named queries are `tables`, `users`, `roles`, `permissions`, `audit`, and
+`migrations`; `devops/db/query.sh` without a query prints its usage.
+
+### Content Studio sign-in (FR-00003, FR-00004)
 
 Signing in uses a one-time PIN sent to the owner's email. Agents cannot sign
 in; the owner checks sign-in by hand after a deploy that touches `studio-web`,
@@ -125,7 +168,7 @@ Reading with `gh` needs no approval. Posting to GitHub is outward-facing and
 the repository is public: show every comment, issue, pull request, or status
 change to the owner and get approval before posting it.
 
-### Tests and lint (FR-00000, FR-00001, FR-00002, FR-00003)
+### Tests and lint (FR-00000, FR-00001, FR-00002, FR-00003, FR-00004)
 
 ```bash
 tests/FR-00000/onboarding_test.sh
@@ -141,6 +184,8 @@ tests/FR-00003/onboarding_access_test.sh
 tests/FR-00003/terraform_access_test.sh
 tests/FR-00003/deploy_script_test.sh
 tests/FR-00003/deployed_test.sh
+tests/FR-00004/terraform_test.sh
+tests/FR-00004/db_query_test.sh
 pnpm test
 pnpm run typecheck
 pnpm run test:e2e
@@ -158,6 +203,12 @@ credentials and change nothing; `tests/FR-00003/deployed_test.sh` calls the
 deployed Content Studio without signing in. `pnpm run test:e2e` runs both
 Content Studio Workers locally and tests them in Chromium, with tokens from a
 local stand-in for Access's key server; it needs no credentials.
+`tests/FR-00004/terraform_test.sh` reads the Terraform and Wrangler files and
+needs no credentials. `tests/FR-00004/db_query_test.sh` runs the query script
+against a stand-in Wrangler and needs no credentials. `pnpm test` also runs
+the FR-00004 tests against a local Content D1 with every migration applied,
+and `pnpm run test:e2e` runs the FR-00004 browser tests with a fresh local
+Content D1 and a local stand-in for Cloudflare's API.
 
 ## Conventions
 
