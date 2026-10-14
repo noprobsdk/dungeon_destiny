@@ -2,6 +2,25 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-14: Implemented, moved to In Review
+
+- **Change:** Implemented FR-00004: Content D1 (`dd-dev-content`, EU) with the
+  user, role, permission, and audit tables and migrations; the `studio-api`
+  services with a permission check on every method and the Access group sync;
+  the Mantine layout and the Users, User, Roles, Role, and Permissions pages;
+  the Terraform for the database, the Access group, and the Access policy;
+  setup-guide step 13; `devops/db/query.sh`; the Content D1 how-to; the
+  `AGENTS.md` commands; and the tests, including a browser end-to-end test.
+  Added `implementation_report.md` and moved the status to `In Review`.
+- **Reason:** Steps 2 to 8 of the implementation sequence are complete. Every
+  Section 16 check passed, the credential-free checks also from a clean clone
+  of `5d33b5f`. The implementation decisions were made during implementation
+  and confirmed by the project owner on 2026-10-13.
+- **Affected files:** `README.md`, `implementation_report.md`, `CHANGELOG.md`.
+- **Verification:** All three files match their approved proposals. The
+  implementation decisions and findings are recorded in
+  `implementation_report.md`.
+
 ## 2026-10-13: Query script added to scope
 
 - **Change:** Added `devops/db/query.sh` to the scope, the approved decisions,

@@ -1,6 +1,6 @@
 # FR-00004: Content D1 and user model
 
-- **Status:** In Progress
+- **Status:** In Review
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** [GitHub Issue #5](https://github.com/noprobsdk/dungeon_destiny/issues/5), milestone "Content Studio - Basic user management".
