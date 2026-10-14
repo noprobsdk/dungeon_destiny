@@ -1,6 +1,6 @@
 # FR-00000: Terraform setup
 
-- **Status:** Pending documentation
+- **Status:** Complete
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** [GitHub Issue #1](https://github.com/noprobsdk/dungeon_destiny/issues/1), milestone "Content Studio - Basic user management".

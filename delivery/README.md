@@ -33,6 +33,13 @@ needs it, such as a test plan or `implementation_report.md`. The README follows
 its originating Feature Request, not copied from `doc/`. The directory is created when the first
 Feature Request is published to it.
 
+`_as-built/` mirrors the folder structure and page names of `doc/`. A page about a subject that
+`doc/` designs uses the same path, such as `_as-built/08-technical/service-architecture/deployment-model.md`;
+a subject without a design page gets a page in the matching folder. Only the structure is shared:
+the content comes from the Feature Requests. Each completed Feature Request updates the pages it
+affects, in the order the Feature Requests are completed, so the pages describe what has been
+built so far.
+
 ## Feature Request workflow
 
 An approved design under `doc/` is the authoritative source for a Feature Request. GitHub Issues
@@ -63,7 +70,7 @@ New
 
 | Feature Request | Status | Created |
 |---|---|---|
-| [FR-00000: Terraform setup](FR/FR-00000-terraform-setup/README.md) | Pending documentation | 2026-10-07 |
+| [FR-00000: Terraform setup](FR/FR-00000-terraform-setup/README.md) | Complete | 2026-10-07 |
 | [FR-00001: Worker dev workflow](FR/FR-00001-worker-dev-workflow/README.md) | Pending documentation | 2026-10-07 |
 | [FR-00002: GitHub CLI onboarding](FR/FR-00002-github-cli-onboarding/README.md) | Pending documentation | 2026-10-08 |
 | [FR-00003: Worker access policy](FR/FR-00003-worker-access-policy/README.md) | Pending documentation | 2026-10-09 |
