@@ -1,9 +1,11 @@
 # Developer onboarding
 
 This page describes the onboarding script that checks whether a machine can
-run Dungeon Destiny's infrastructure tooling, and helps fix what is missing.
+run Dungeon Destiny's infrastructure tooling and build and test the Workers,
+and helps fix what is missing.
 
-Sources: [FR-00000: Terraform setup](../../FR/FR-00000-terraform-setup/README.md).
+Sources: [FR-00000: Terraform setup](../../FR/FR-00000-terraform-setup/README.md),
+[FR-00001: Worker dev workflow](../../FR/FR-00001-worker-dev-workflow/README.md).
 
 ## Script
 
@@ -20,6 +22,8 @@ Every check runs and is reported as passed, failed, or skipped:
 
 - jq, Terraform 1.11 or later, curl 7.75 or later, ShellCheck, and git are
   installed;
+- Node.js 24.x and the pnpm version pinned in `package.json` are installed,
+  and the project dependencies are installed;
 - the credential file exists and only its owner can read it;
 - the credential file sets `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_KEY`,
   `CLOUDFLARE_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, and
@@ -40,6 +44,13 @@ can be run again at any time.
   check it shows the dashboard step and asks whether it is done. After each
   fix or confirmation it checks the item again; a Yes is never accepted as
   proof on its own.
+
+  Node.js 24 is installed from NodeSource with `setup_24.x`, because
+  NodeSource's "current" script now installs Node.js 26. pnpm is installed
+  with its standalone installer at the pinned version, without `sudo`, into
+  `~/.local/share/pnpm/bin/`; open terminals then need `source ~/.bashrc`.
+  The project dependencies are installed with
+  `pnpm install --frozen-lockfile`.
 - **Check only**, with `--check` or without a terminal: the script only reads,
   never prompts, and changes nothing.
 
@@ -50,8 +61,15 @@ Cloudflare and R2 checks use curl with the credentials on standard input.
 
 ## Verification
 
-Accepted on 2026-10-07. On the owner's machine, `devops/onboarding.sh --check`
-reported 13 passed, 0 failed, 0 skipped, also from a clean clone of commit
-`d00934f`. The 27 tests in `tests/FR-00000/onboarding_test.sh` pass. They use
-stand-in programs and temporary credential files, so they need no network and
-no real credentials.
+FR-00000, accepted on 2026-10-07. On the owner's machine,
+`devops/onboarding.sh --check` reported 13 passed, 0 failed, 0 skipped, also
+from a clean clone of commit `d00934f`. The 27 tests in
+`tests/FR-00000/onboarding_test.sh` pass.
+
+FR-00001, accepted on 2026-10-08. On the owner's machine,
+`devops/onboarding.sh --check` reported 16 passed. The 10 tests in
+`tests/FR-00001/onboarding_node_test.sh` pass, also from a clean clone of
+commit `c0acb7b`.
+
+The tests use stand-in programs and temporary credential files, so they need
+no network and no real credentials.

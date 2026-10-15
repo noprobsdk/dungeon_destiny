@@ -1,9 +1,10 @@
 # Deployment model
 
-This page describes the Cloudflare infrastructure that has been built for
-Dungeon Destiny and how it is managed.
+This page describes the Cloudflare infrastructure and Workers that have been
+built for Dungeon Destiny and how they are managed.
 
-Sources: [FR-00000: Terraform setup](../../../FR/FR-00000-terraform-setup/README.md).
+Sources: [FR-00000: Terraform setup](../../../FR/FR-00000-terraform-setup/README.md),
+[FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflow/README.md).
 
 ## Infrastructure management
 
@@ -34,6 +35,22 @@ State is never stored in the repository. `.gitignore` excludes
 `.terraform/`, `*.tfstate`, and `*.tfstate.*`, and keeps
 `.terraform.lock.hcl` tracked.
 
+## Workers
+
+| Worker | Code | Terraform resource | Address |
+|---|---|---|---|
+| `dd-dev-gateway` | `apps/gateway/` | `cloudflare_worker.gateway` in `workers.tf` | `workers.dev` address enabled; preview URLs disabled |
+
+Terraform owns each Worker resource, its `workers.dev` settings, and the tags
+Wrangler sets on deploy (`cf:environment=dev`, `cf:service=gateway`), so the
+two tools do not undo each other. Wrangler uploads the code versions, as
+described in the [delivery pipeline](delivery-pipeline.md).
+
+`dd-dev-gateway` has only the `CF_VERSION_METADATA` binding and the
+`ENVIRONMENT` variable. It has no D1, R2, Durable Object, Queue, or service
+bindings, and no custom domain. Its endpoint is described in
+[Access and edge services](access-and-edge.md).
+
 ## Access and credentials
 
 Terraform is run only by the project owner, from WSL.
@@ -47,6 +64,9 @@ Terraform is run only by the project owner, from WSL.
 - The R2 address contains the account ID, so it is not stored in the
   repository. It is set in `AWS_ENDPOINT_URL_S3` from
   `CLOUDFLARE_ACCOUNT_ID` after the credentials are loaded.
+- The account ID is passed to Terraform in `TF_VAR_cloudflare_account_id`,
+  set from `CLOUDFLARE_ACCOUNT_ID`, so the repository holds no account
+  details.
 - The values are kept in `~/.config/dungeon-destiny/cloudflare.env`, readable
   only by its owner, and loaded into the shell before Terraform runs.
 
@@ -57,8 +77,8 @@ steps are in `doc/howto-cloudflare-setup.md`.
 
 ## Verification
 
-Accepted on 2026-10-07. Verified on the owner's machine and from a clean clone
-of commit `d00934f`:
+FR-00000, accepted on 2026-10-07. Verified on the owner's machine and from a
+clean clone of commit `d00934f`:
 
 - `terraform fmt -check` and `terraform validate` pass;
 - `terraform init` connects to the R2 backend, and `plan` and `apply` report
@@ -68,4 +88,9 @@ of commit `d00934f`:
   is removed when the first run ends;
 - no state, credential, or `.terraform/` files are tracked.
 
-The tests are in `tests/FR-00000/terraform_test.sh`.
+FR-00001, accepted on 2026-10-08. Terraform created `dd-dev-gateway`, and a
+second `plan` reports no changes. Verified from a clean clone of commit
+`c0acb7b`: Terraform `init`, `plan` with no changes, and `fmt`.
+
+The tests are in `tests/FR-00000/terraform_test.sh`, which applies only when
+`plan` reports no changes, and `tests/FR-00001/terraform_worker_test.sh`.

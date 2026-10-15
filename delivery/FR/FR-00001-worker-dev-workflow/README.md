@@ -1,6 +1,6 @@
 # FR-00001: Worker dev workflow
 
-- **Status:** Pending documentation
+- **Status:** Complete
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** [GitHub Issue #2](https://github.com/noprobsdk/dungeon_destiny/issues/2), milestone "Content Studio - Basic user management".
