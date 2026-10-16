@@ -2,6 +2,15 @@
 
 Published changes to the as-built documentation, newest first.
 
+## 2026-10-15: FR-00002 published
+
+- **Change:** Published FR-00002. Added the GitHub CLI checks and guided
+  installation to `08-technical/developer-onboarding.md`.
+- **Source:** [FR-00002: GitHub CLI onboarding](../FR/FR-00002-github-cli-onboarding/README.md),
+  its `CHANGELOG.md`, and its `implementation_report.md`.
+- **Affected files:** `README.md`, `CHANGELOG.md`,
+  `08-technical/developer-onboarding.md`.
+
 ## 2026-10-14: FR-00001 published
 
 - **Change:** Published FR-00001. Created
