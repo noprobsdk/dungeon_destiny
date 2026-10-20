@@ -3,7 +3,8 @@
 This page describes how Dungeon Destiny's Workers are built, tested, and
 deployed.
 
-Sources: [FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflow/README.md).
+Sources: [FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflow/README.md),
+[FR-00003: Worker access policy](../../../FR/FR-00003-worker-access-policy/README.md).
 
 ## Workspace
 
@@ -17,25 +18,49 @@ Sources: [FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflo
 
 | Package | Location | Contents |
 |---|---|---|
-| `@dungeon-destiny/contracts` | `packages/contracts/` | The standard response type and the shared error codes |
+| `@dungeon-destiny/contracts` | `packages/contracts/` | The standard response type, the shared error codes, and the Content Studio types `StaffIdentity`, `StaffRole`, `StaffMember`, and `StudioApiRpc` |
 | `@dungeon-destiny/gateway` | `apps/gateway/` | The `gateway` Worker, its Wrangler configuration, generated types, and the `deploy:dev` script |
+| `@dungeon-destiny/studio-api` | `apps/studio-api/` | The `studio-api` Worker, its Wrangler configuration, generated types, and the `deploy:dev` script |
+| `@dungeon-destiny/studio-web` | `apps/studio-web/` | The `studio-web` Worker and the Content Studio pages, its Wrangler and Vite configuration, generated types, and the `build`, `dev`, and `deploy:dev` scripts |
+
+FR-00003 added these exact pins: React and `react-dom` `19.3.0`, Vite
+`8.3.4`, `@vitejs/plugin-react` `6.1.2`, `jose` `6.2.12`, React Testing Library
+`16.3.3`, `@testing-library/user-event` `14.6.7`, `@testing-library/jest-dom`
+`7.0.1`, jsdom `30.1.2`, and Playwright `1.64.0`.
 
 ## Worker configuration
 
 Each Worker has a `wrangler.jsonc` with an `env.dev` block that names the
-deployed Worker, such as `dd-dev-gateway`. The `workers.dev` address is enabled
-and preview URLs are disabled, matching the Terraform resource. The
-compatibility date is `2026-10-07`, without `nodejs_compat`. After changing a
-`wrangler.jsonc`, the Worker types are regenerated with Wrangler.
+deployed Worker, such as `dd-dev-gateway`. The `workers.dev` setting matches
+the Terraform resource: enabled for `gateway` and `studio-web`, disabled for
+`studio-api`. Preview URLs are disabled for every Worker. The compatibility
+date is `2026-10-07`, without `nodejs_compat`. After changing a
+`wrangler.jsonc`, the Worker types are regenerated with Wrangler, for the
+Content Studio Workers with each package's `types` script.
+
+`studio-web` builds the Content Studio pages with Vite into
+`apps/studio-web/dist/`, which Wrangler serves as static assets.
 
 ## Tests
 
 - Vitest `4.1.11` with `@cloudflare/vitest-plugin` `1.3.7` runs the Worker
   tests in the Workers runtime, configured in `vitest.config.ts` with each
   Worker's `dev` environment.
-- Vitest tests are named `tests/FR-<number>/*.test.ts`; shell tests are named
+- `vitest.config.ts` has one Vitest project per Worker, `gateway`,
+  `studio-api`, and `studio-web`, and one project, `studio-ui`, that runs the
+  Content Studio page tests in jsdom with React Testing Library. Each Worker
+  is tested on its own: `studio-api` with a test SuperAdmin email address, and
+  `studio-web` with a stand-in `studio-api`.
+- `pnpm run test:e2e` runs both Content Studio Workers locally as two
+  `wrangler dev` processes, connected through Wrangler's local dev registry,
+  and tests them in Chromium with Playwright. Tokens come from a local
+  stand-in for Access's key server, so the test needs no credentials.
+- Vitest tests are named `tests/FR-<number>/*.test.ts`; FR-00003 keeps them
+  in subfolders, `api/`, `web/`, `ui/`, and `e2e/`. Page tests end in
+  `.test.tsx` and end-to-end tests in `.e2e.ts`. Shell tests are named
   `tests/FR-<number>/*_test.sh`.
-- `pnpm test` runs the Vitest tests and `pnpm run typecheck` checks the types.
+- `pnpm test` runs the Vitest tests and `pnpm run typecheck` checks the types,
+  including the Content Studio pages and the FR-00003 tests.
 - Tests that need Cloudflare access are recorded as blocked when the credential
   file is missing.
 
@@ -50,6 +75,20 @@ Terraform creates each Worker; Wrangler `4.148.0` uploads its code with
 `CLOUDFLARE_EMAIL`, and `CLOUDFLARE_ACCOUNT_ID` from the owner's credential
 file. A deploy changes the live Worker and needs the owner's approval.
 
+Content Studio is deployed `studio-api` first, then `studio-web`:
+
+- `studio-api`'s `deploy:dev` runs `devops/deploy-studio-api.sh`, which passes
+  `STUDIO_SUPERADMIN_EMAIL` from the credential file to Wrangler as the
+  `SUPERADMIN_EMAIL` variable. It refuses to run when the address is not set,
+  masks the address in Wrangler's output, and returns Wrangler's exit status.
+- `studio-web`'s `deploy:dev` builds the pages with Vite, then deploys.
+
+Before every deploy, the whole local test suite runs, including
+`pnpm run test:e2e`, and the deploy stops if anything fails. After every
+deploy, the deployed tests run and `terraform plan` must report no changes.
+The owner checks the one-time PIN sign-in by hand after a deploy that touches
+`studio-web`, Cloudflare Access, or the SuperAdmin.
+
 Deployments are manual. There is no deployment automation, such as GitHub
 Actions. The commands are in `AGENTS.md`.
 
@@ -61,3 +100,14 @@ runtime, and the workspace, type-check, and deployed tests in
 Worker matched the version Wrangler reported. Verified from a clean clone of
 commit `c0acb7b`: `pnpm install --frozen-lockfile`, every test,
 `pnpm run typecheck`, and the `AGENTS.md` local run.
+
+FR-00003, accepted on 2026-10-10. `pnpm test` passed 36 tests in the Workers
+runtime and jsdom, `pnpm run typecheck` passed, and `pnpm run test:e2e` passed
+3 tests in Chromium. The 4 tests in `tests/FR-00003/deploy_script_test.sh`
+pass: the script runs `wrangler deploy --env dev` with a dev tag and the
+SuperAdmin variable, refuses to run without the address, never prints it, and
+fails when Wrangler fails. The 3 tests in `tests/FR-00003/deployed_test.sh`
+pass against the deployed Workers, and ShellCheck reports no findings. The
+FR-00000, FR-00001, and FR-00002 tests still pass. Verified from a clean clone
+of commit `2ca1885`: `pnpm install --frozen-lockfile`, `pnpm run typecheck`,
+and every test, including the end-to-end and Terraform tests.

@@ -6,7 +6,8 @@ and helps fix what is missing.
 
 Sources: [FR-00000: Terraform setup](../../FR/FR-00000-terraform-setup/README.md),
 [FR-00001: Worker dev workflow](../../FR/FR-00001-worker-dev-workflow/README.md),
-[FR-00002: GitHub CLI onboarding](../../FR/FR-00002-github-cli-onboarding/README.md).
+[FR-00002: GitHub CLI onboarding](../../FR/FR-00002-github-cli-onboarding/README.md),
+[FR-00003: Worker access policy](../../FR/FR-00003-worker-access-policy/README.md).
 
 ## Script
 
@@ -27,12 +28,16 @@ Every check runs and is reported as passed, failed, or skipped:
   succeeds; only its exit status is used, and its output is hidden;
 - Node.js 24.x and the pnpm version pinned in `package.json` are installed,
   and the project dependencies are installed;
+- Playwright's Chromium, used by the end-to-end tests, is installed;
 - the credential file exists and only its owner can read it;
 - the credential file sets `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_KEY`,
-  `CLOUDFLARE_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, and
-  `AWS_SECRET_ACCESS_KEY`;
-- Cloudflare accepts the Global API Key and account email; and
-- the R2 access key pair can list the `dd-terraform-state` bucket.
+  `CLOUDFLARE_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and
+  `STUDIO_SUPERADMIN_EMAIL`, the Content Studio SuperAdmin's email address,
+  which must be a plain email address;
+- Cloudflare accepts the Global API Key and account email;
+- the R2 access key pair can list the `dd-terraform-state` bucket; and
+- Cloudflare Zero Trust is turned on, which the script checks by asking
+  Cloudflare's API for the account's Access organization.
 
 The script exits with status 1 when any check fails and 0 when all pass. It
 can be run again at any time.
@@ -61,14 +66,20 @@ can be run again at any time.
   `gh auth login` in another terminal, asks whether that is done, and checks
   again. `gh` stores its login in the owner's home folder, never in the
   repository. The guided installs support Ubuntu and Debian only.
+
+  Playwright's Chromium is installed with
+  `pnpm exec playwright install --with-deps chromium`, into the owner's home
+  folder. Turning on Zero Trust is a manual step in the Cloudflare dashboard,
+  on the free plan with a team name: the script explains it, asks whether it
+  is done, checks again, and changes nothing in Cloudflare.
 - **Check only**, with `--check` or without a terminal: the script only reads,
   never prompts, and changes nothing.
 
 In both modes an empty answer is No. The script never changes anything in
 Cloudflare, never overwrites a credential value without asking, never prints
-credential values or the GitHub token, and never passes them as command-line
-arguments: the Cloudflare and R2 checks use curl with the credentials on
-standard input.
+credential values, the SuperAdmin email address, or the GitHub token, and
+never passes them as command-line arguments: the Cloudflare, R2, and Zero
+Trust checks use curl with the credentials on standard input.
 
 ## Verification
 
@@ -86,6 +97,17 @@ FR-00002, accepted on 2026-10-09. On the owner's machine,
 `devops/onboarding.sh --check` reported 18 passed. The 6 tests in
 `tests/FR-00002/onboarding_gh_test.sh` pass, also from a clean clone of
 commit `dc60ef1`, together with the FR-00000 and FR-00001 onboarding tests.
+
+FR-00003, accepted on 2026-10-10. On the owner's machine,
+`devops/onboarding.sh --check` reported 21 passed. The 9 tests in
+`tests/FR-00003/onboarding_access_test.sh` pass, also from a clean clone of
+commit `2ca1885`. They cover a missing, set, and not plain SuperAdmin email
+address, Zero Trust turned on and off, and Chromium installed and missing,
+and that guided mode installs Chromium only after Yes and treats Zero Trust
+as a manual step. The FR-00000, FR-00001, and FR-00002 onboarding tests use a
+fake SuperAdmin email address and still pass. A SuperAdmin email address with
+a hidden byte broke pnpm and Terraform during implementation; the plain-email
+check was added for that reason.
 
 The tests use stand-in programs and temporary credential files, so they need
 no network, no real credentials, and no GitHub account.

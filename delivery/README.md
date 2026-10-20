@@ -73,7 +73,7 @@ New
 | [FR-00000: Terraform setup](FR/FR-00000-terraform-setup/README.md) | Complete | 2026-10-07 |
 | [FR-00001: Worker dev workflow](FR/FR-00001-worker-dev-workflow/README.md) | Complete | 2026-10-07 |
 | [FR-00002: GitHub CLI onboarding](FR/FR-00002-github-cli-onboarding/README.md) | Complete | 2026-10-08 |
-| [FR-00003: Worker access policy](FR/FR-00003-worker-access-policy/README.md) | Pending documentation | 2026-10-09 |
+| [FR-00003: Worker access policy](FR/FR-00003-worker-access-policy/README.md) | Complete | 2026-10-09 |
 | [FR-00004: Content D1 and user model](FR/FR-00004-content-d1-user-model/README.md) | Pending documentation | 2026-10-10 |
 
 A Feature Request README uses one of the Feature Request statuses defined above. The Feature Request list

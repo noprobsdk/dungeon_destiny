@@ -1,6 +1,6 @@
 # FR-00003: Worker access policy
 
-- **Status:** Pending documentation
+- **Status:** Complete
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** [GitHub Issue #4](https://github.com/noprobsdk/dungeon_destiny/issues/4), milestone "Content Studio - Basic user management".

@@ -4,7 +4,8 @@ This page describes the Cloudflare infrastructure and Workers that have been
 built for Dungeon Destiny and how they are managed.
 
 Sources: [FR-00000: Terraform setup](../../../FR/FR-00000-terraform-setup/README.md),
-[FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflow/README.md).
+[FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflow/README.md),
+[FR-00003: Worker access policy](../../../FR/FR-00003-worker-access-policy/README.md).
 
 ## Infrastructure management
 
@@ -40,16 +41,46 @@ State is never stored in the repository. `.gitignore` excludes
 | Worker | Code | Terraform resource | Address |
 |---|---|---|---|
 | `dd-dev-gateway` | `apps/gateway/` | `cloudflare_worker.gateway` in `workers.tf` | `workers.dev` address enabled; preview URLs disabled |
+| `dd-dev-studio-api` | `apps/studio-api/` | `cloudflare_worker.studio_api` in `studio.tf` | No `workers.dev` address; preview URLs disabled |
+| `dd-dev-studio-web` | `apps/studio-web/` | `cloudflare_worker.studio_web` in `studio.tf` | `workers.dev` address enabled, behind Cloudflare Access; preview URLs disabled |
 
 Terraform owns each Worker resource, its `workers.dev` settings, and the tags
-Wrangler sets on deploy (`cf:environment=dev`, `cf:service=gateway`), so the
-two tools do not undo each other. Wrangler uploads the code versions, as
-described in the [delivery pipeline](delivery-pipeline.md).
+Wrangler sets on deploy (`cf:environment=dev` and `cf:service=` followed by the
+Worker's service name, such as `gateway`), so the two tools do not undo each
+other. Wrangler uploads the code versions, as described in the [delivery
+pipeline](delivery-pipeline.md).
 
 `dd-dev-gateway` has only the `CF_VERSION_METADATA` binding and the
 `ENVIRONMENT` variable. It has no D1, R2, Durable Object, Queue, or service
 bindings, and no custom domain. Its endpoint is described in
 [Access and edge services](access-and-edge.md).
+
+The Content Studio Workers have these bindings and variables. Neither has a
+D1, R2, Durable Object, or Queue binding, or a custom domain.
+
+| Worker | Bindings | Variables |
+|---|---|---|
+| `dd-dev-studio-api` | `CF_VERSION_METADATA` | `ENVIRONMENT`; `SUPERADMIN_EMAIL`, empty in the repository and set at deploy time |
+| `dd-dev-studio-web` | `CF_VERSION_METADATA`; `ASSETS`, the static assets; `STUDIO_API`, the service binding to `dd-dev-studio-api` | `ENVIRONMENT`; `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD`, which are not secrets |
+
+The Content Studio pages are described in [Frontends](frontends.md).
+
+## Cloudflare Access
+
+Terraform manages the Access setup in front of `dd-dev-studio-web`, in
+`studio.tf`:
+
+| Resource | Purpose |
+|---|---|
+| `cloudflare_zero_trust_access_identity_provider.one_time_pin` | The one-time PIN sign-in method |
+| `cloudflare_zero_trust_access_application.studio_web` | The self-hosted application "Content Studio (dev)", with a 24-hour session, the one-time PIN as the only sign-in method, and its policy defined inside the application |
+| Output `studio_web_access_aud` | The application's AUD tag, copied into `ACCESS_AUD` in `apps/studio-web/wrangler.jsonc` after a change to the application |
+
+The policy allows only the SuperAdmin's email address, read from the
+`studio_superadmin_email` variable. The variable is marked sensitive and has
+no default. Cloudflare Zero Trust itself was turned on by hand in the
+dashboard; Terraform does not manage the Zero Trust organization. The sign-in
+and token check are described in [Access and edge services](access-and-edge.md).
 
 ## Access and credentials
 
@@ -67,6 +98,9 @@ Terraform is run only by the project owner, from WSL.
 - The account ID is passed to Terraform in `TF_VAR_cloudflare_account_id`,
   set from `CLOUDFLARE_ACCOUNT_ID`, so the repository holds no account
   details.
+- The Content Studio SuperAdmin's email address is passed to Terraform in
+  `TF_VAR_studio_superadmin_email`, set from `STUDIO_SUPERADMIN_EMAIL`, so no
+  email address is written in the Terraform or Wrangler files.
 - The values are kept in `~/.config/dungeon-destiny/cloudflare.env`, readable
   only by its owner, and loaded into the shell before Terraform runs.
 
@@ -92,5 +126,16 @@ FR-00001, accepted on 2026-10-08. Terraform created `dd-dev-gateway`, and a
 second `plan` reports no changes. Verified from a clean clone of commit
 `c0acb7b`: Terraform `init`, `plan` with no changes, and `fmt`.
 
+FR-00003, accepted on 2026-10-10. Terraform created both Content Studio
+Workers and the Access setup, and a second `plan` reports no changes. Moving
+the Access policy from a separate reusable policy into the application was
+applied in two steps, because Cloudflare refuses to delete a reusable policy
+that an application still uses. Verified from a clean clone of commit
+`2ca1885`, including the FR-00000 Terraform test.
+
 The tests are in `tests/FR-00000/terraform_test.sh`, which applies only when
-`plan` reports no changes, and `tests/FR-00001/terraform_worker_test.sh`.
+`plan` reports no changes, `tests/FR-00001/terraform_worker_test.sh`, and
+`tests/FR-00003/terraform_access_test.sh`. The FR-00003 test checks that
+Terraform and Wrangler agree on each Worker's address and tags, the Access
+application and policy, the AUD output, that no email address is written in
+the Terraform or Wrangler files, and that `fmt` and `validate` pass.
