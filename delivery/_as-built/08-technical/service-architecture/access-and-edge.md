@@ -1,10 +1,12 @@
 # Access and edge services
 
 This page describes the standard response format, the public endpoints, and
-the Cloudflare Access sign-in for Content Studio that have been built.
+the Cloudflare Access sign-in, staff users, and API of Content Studio that have
+been built.
 
 Sources: [FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflow/README.md),
-[FR-00003: Worker access policy](../../../FR/FR-00003-worker-access-policy/README.md).
+[FR-00003: Worker access policy](../../../FR/FR-00003-worker-access-policy/README.md),
+[FR-00004: Content D1 and user model](../../../FR/FR-00004-content-d1-user-model/README.md).
 
 ## Standard response format
 
@@ -34,6 +36,10 @@ Clients act on `code`, never on the message text. A code is added to
 | `METHOD_NOT_ALLOWED` | A method the endpoint does not accept |
 | `UNAUTHENTICATED` | No valid Cloudflare Access token (HTTP 401) |
 | `NOT_STAFF` | A valid Access token for someone who is not let in (HTTP 403) |
+| `PERMISSION_DENIED` | A signed-in user without the permission an action needs (HTTP 403) |
+| `VALIDATION_FAILED` | Input that does not match its schema, or a body that is not JSON (HTTP 400) |
+| `CONFLICT` | A duplicate email address or role name, a role still in use, or a change to the person's own roles or status (HTTP 409) |
+| `ACCESS_SYNC_FAILED` | Cloudflare refused to update the Access group, so nothing was saved (HTTP 502) |
 
 ## gateway `/health`
 
@@ -60,7 +66,7 @@ sign-in method, the Access application, and its policy, as described in the
 | Sign-in method | One-time PIN sent by email, the only method allowed; Access redirects to it |
 | Application | A self-hosted Access application, "Content Studio (dev)", in front of the `dd-dev-studio-web` address |
 | Session duration | 24 hours |
-| Policy | Defined inside the application; allows only the SuperAdmin's email address, so nobody else can request a PIN |
+| Policy | Defined inside the application; allows the SuperAdmin's email address and the members of the Access group "Content Studio users", so nobody else can request a PIN |
 | Zero Trust | Turned on by hand in the Cloudflare dashboard, on its free plan; Terraform does not manage the Zero Trust organization |
 
 ### Token check in `studio-web`
@@ -91,13 +97,75 @@ address is kept in the owner's private credential file as
 `STUDIO_SUPERADMIN_EMAIL`, never in the repository. Terraform reads it for the
 Access policy, and the `studio-api` deploy passes it to the Worker as the
 `SUPERADMIN_EMAIL` variable. `studio-api` compares addresses without regard to
-upper and lower case; when the variable is not set, nobody is let in.
+upper and lower case; when the variable is not set, nobody is the SuperAdmin.
+The SuperAdmin passes every permission check, is not a row in the `users`
+table, and cannot be changed or deactivated in Content Studio.
 
 If the SuperAdmin cannot receive the one-time PIN, the owner signs in to the
 Cloudflare dashboard with their own Cloudflare account, which does not use
 Access, changes `STUDIO_SUPERADMIN_EMAIL`, applies Terraform, and redeploys
 `studio-api`. The Access policy is not changed in the dashboard, because
 Terraform would undo it. The steps are in `doc/howto-cloudflare-setup.md`.
+
+### Access group sync
+
+Every active user is a member of the Access group "Content Studio users",
+together with the SuperAdmin. Terraform creates the group and leaves its
+members to `studio-api`, which replaces the whole member list through
+Cloudflare's API whenever a user is created, deactivated, reactivated, or
+changes email address. `studio-api` updates the group first and saves the
+user change only when that succeeded; otherwise nothing is saved and the
+response has code `ACCESS_SYNC_FAILED`. Because the whole list is sent, every
+update also repairs any earlier difference. A user added in Content Studio can
+sign in at once, with no Terraform change.
+
+`studio-api` calls Cloudflare's API with a Cloudflare account API token that
+has only the permission `Access: Organizations, Identity Providers, and Groups
+Write`. The project owner creates it by hand and stores it only as the
+`CF_ACCESS_GROUP_TOKEN` Worker secret with `wrangler secret put`, never in the
+repository, Terraform state, credential file, or a log (DD-021). The secret is
+declared as required, so a deploy fails without it. It is rotated by creating
+a new token, storing it, and then deleting the old one. The token is sent only
+to Cloudflare's API and is never returned, logged, or shown. The steps are in
+`doc/howto-cloudflare-setup.md`, step 13.
+
+Check Access, for users with `users.manage`, compares the group with the
+active users and reports the users missing from the group and the group
+members who are not active users.
+
+## Staff users
+
+A user is anyone who signs in to Content Studio; players are never users.
+Users, roles, and permissions are stored in Content D1, as described in
+[Data services](data-services.md). The model follows
+spatie/laravel-permission, adapted: users have roles, roles have permissions,
+and there are no direct user permissions, guards, or teams.
+
+`studio-api` decides who is let in on every request, from the `users` table:
+
+- the SuperAdmin is let in with every permission;
+- an active user with at least one role is let in with the permissions of
+  their roles; and
+- a deactivated user, a user with no role, and an unknown email address are
+  refused with code `NOT_STAFF`, even while their Access session lasts.
+
+Permissions are defined in code in `packages/contracts/`, each with a name, an
+area, a description of what it allows, a purpose saying why it exists and who
+should have it, and the Feature Request that added it. Roles, and the
+permissions each role has, are managed in Content Studio.
+
+| Permission | Area | Allows |
+|---|---|---|
+| `users.view` | Users | Seeing the users, with their email addresses, names, roles, and status |
+| `users.manage` | Users | Creating users, changing their names, email addresses, and roles, deactivating and reactivating them, and Check Access |
+| `roles.view` | Roles | Seeing the roles, the permissions each role has, and the permission list |
+| `roles.manage` | Roles | Creating, changing, and deleting roles, and choosing their permissions |
+
+Users are deactivated, never deleted. A role can be deleted only while no
+user has it. Nobody can change their own roles or status, so nobody can lock
+themselves out or give themselves more permissions. Every change to a user or
+a role is written to `audit_events` with the person, the action, the record,
+the values before and after, and the request ID.
 
 ## Content Studio API
 
@@ -106,17 +174,30 @@ the `STUDIO_API` service binding, using typed RPC with the `StudioApiRpc`
 contract in `@dungeon-destiny/contracts`. `studio-api` has no public address,
 and it answers any HTTP request with HTTP 404 and code `NOT_FOUND`.
 
-| Request through `studio-web` | Response |
-|---|---|
-| `GET /api/me` as the SuperAdmin | HTTP 200 with `data` holding the email address and the role `superadmin` |
-| `GET /api/me` as anyone else | HTTP 403, `status` `"error"`, code `NOT_STAFF` |
-| `GET /api/health` | HTTP 200, the `studio-api` health response with service `studio-api` |
-| Another method on an `/api` route | HTTP 405 with `Allow: GET`, code `METHOD_NOT_ALLOWED` |
-| Another `/api` path | HTTP 404, code `NOT_FOUND` |
+Every `studio-api` method first decides whether the person is let in, then
+checks the permission it needs before reading or changing data, and refuses
+with HTTP 403 and code `PERMISSION_DENIED` otherwise. Hiding a page or button
+is never the only protection. Input is checked with Zod schemas shared with
+the Content Studio forms.
 
-`studio-web` generates `meta.requestId` with `crypto.randomUUID()` and passes
-it to `studio-api`, so both Workers report the same request ID. No database is
-used.
+| Route through `studio-web` | Method | Permission |
+|---|---|---|
+| `/api/me`: the signed-in person's email address, display name, roles, permissions, and whether they are the SuperAdmin | `GET` | A person who is let in |
+| `/api/health`: the `studio-api` health response | `GET` | A valid Access token |
+| `/api/users` | `GET`, `POST` | `users.view`, `users.manage` |
+| `/api/users/{id}` | `GET`, `PATCH` | `users.view`, `users.manage` |
+| `/api/users/{id}/deactivate`, `/api/users/{id}/reactivate` | `POST` | `users.manage` |
+| `/api/access-sync`: Check Access | `GET` | `users.manage` |
+| `/api/roles` | `GET`, `POST` | `roles.view`, `roles.manage` |
+| `/api/roles/{id}` | `GET`, `PATCH`, `DELETE` | `roles.view`, `roles.manage` |
+| `/api/permissions` | `GET` | `roles.view` |
+
+Another method on a route returns HTTP 405 with an `Allow` header listing the
+accepted methods and code `METHOD_NOT_ALLOWED`, and another `/api` path
+returns HTTP 404 with code `NOT_FOUND`. `studio-web` generates
+`meta.requestId` with `crypto.randomUUID()` and passes it to `studio-api`, so
+both Workers report the same request ID, and it is stored in the audit
+records.
 
 ## Verification
 
@@ -139,3 +220,18 @@ Cloudflare: without signing in, the deployed `studio-web` address redirects
 pages and `/api/me` to Access, and `studio-api` has no address. The owner
 signed in with a one-time PIN. `tests/FR-00003/deployed_test.sh` repeats the
 deployed checks after every deploy.
+
+FR-00004, accepted on 2026-10-14. The Vitest tests in the Workers runtime
+cover who is let in, the SuperAdmin passing every permission check, each
+method refusing a person without its permission, creating, changing,
+deactivating, and reactivating users and creating, changing, and deleting
+roles with the refusals for duplicates, roles in use, and changes to the
+person's own roles or status, the audit records, the Access group updates
+with nothing saved when Cloudflare's API fails, Check Access, and that the
+token is never returned. The end-to-end tests run against a local Content D1
+and a stand-in for Cloudflare's API. Against Cloudflare: the project owner
+signed in as the SuperAdmin, created a role and a user for a second email
+address, and signed in as that user, who saw only the pages the role allows;
+an address that is not a user could not request a PIN; and after the second
+user was deactivated, they were refused and removed from the Access group.
+The FR-00003 deployed tests still pass.

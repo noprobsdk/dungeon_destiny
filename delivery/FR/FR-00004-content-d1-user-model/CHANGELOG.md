@@ -2,6 +2,22 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-10-23: As-built published, moved to Complete
+
+- **Change:** Published the as-built documentation and moved the status to
+  `Complete`.
+- **Reason:** Implementation, verification, and as-built documentation are
+  complete, and no decisions are unresolved.
+- **Affected files:** `README.md`, `CHANGELOG.md`; as-built pages
+  `delivery/_as-built/08-technical/service-architecture/data-services.md`,
+  `delivery/_as-built/08-technical/service-architecture/access-and-edge.md`,
+  `delivery/_as-built/08-technical/service-architecture/frontends.md`,
+  `delivery/_as-built/08-technical/service-architecture/deployment-model.md`,
+  `delivery/_as-built/08-technical/service-architecture/delivery-pipeline.md`,
+  and `delivery/_as-built/08-technical/developer-onboarding.md`.
+- **Verification:** Both files match their approved proposals. The as-built
+  pages were checked against the implementation at commit `5d33b5f`.
+
 ## 2026-10-14: Accepted, moved to Pending documentation
 
 - **Change:** The project owner accepted the implementation against the

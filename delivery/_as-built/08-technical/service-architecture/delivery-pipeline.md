@@ -4,7 +4,8 @@ This page describes how Dungeon Destiny's Workers are built, tested, and
 deployed.
 
 Sources: [FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflow/README.md),
-[FR-00003: Worker access policy](../../../FR/FR-00003-worker-access-policy/README.md).
+[FR-00003: Worker access policy](../../../FR/FR-00003-worker-access-policy/README.md),
+[FR-00004: Content D1 and user model](../../../FR/FR-00004-content-d1-user-model/README.md).
 
 ## Workspace
 
@@ -18,15 +19,18 @@ Sources: [FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflo
 
 | Package | Location | Contents |
 |---|---|---|
-| `@dungeon-destiny/contracts` | `packages/contracts/` | The standard response type, the shared error codes, and the Content Studio types `StaffIdentity`, `StaffRole`, `StaffMember`, and `StudioApiRpc` |
+| `@dungeon-destiny/contracts` | `packages/contracts/` | The standard response type, the shared error codes, the permission list, and the Content Studio types and Zod schemas, including `StudioApiRpc` |
 | `@dungeon-destiny/gateway` | `apps/gateway/` | The `gateway` Worker, its Wrangler configuration, generated types, and the `deploy:dev` script |
-| `@dungeon-destiny/studio-api` | `apps/studio-api/` | The `studio-api` Worker, its Wrangler configuration, generated types, and the `deploy:dev` script |
+| `@dungeon-destiny/studio-api` | `apps/studio-api/` | The `studio-api` Worker, its Wrangler and drizzle-kit configuration, the Content D1 schema and migrations, generated types, and the `deploy:dev` script |
 | `@dungeon-destiny/studio-web` | `apps/studio-web/` | The `studio-web` Worker and the Content Studio pages, its Wrangler and Vite configuration, generated types, and the `build`, `dev`, and `deploy:dev` scripts |
 
 FR-00003 added these exact pins: React and `react-dom` `19.3.0`, Vite
 `8.3.4`, `@vitejs/plugin-react` `6.1.2`, `jose` `6.2.12`, React Testing Library
 `16.3.3`, `@testing-library/user-event` `14.6.7`, `@testing-library/jest-dom`
-`7.0.1`, jsdom `30.1.2`, and Playwright `1.64.0`.
+`7.0.1`, jsdom `30.1.2`, and Playwright `1.64.0`. FR-00004 added Mantine
+`9.7.1` (`@mantine/core`, `form`, `hooks`, `modals`, and `notifications`),
+React Router `8.4.0`, TanStack Query `5.104.1`, Zod `4.6.5`, Drizzle ORM
+`0.45.4`, and drizzle-kit `0.31.11`.
 
 ## Worker configuration
 
@@ -49,18 +53,24 @@ Content Studio Workers with each package's `types` script.
 - `vitest.config.ts` has one Vitest project per Worker, `gateway`,
   `studio-api`, and `studio-web`, and one project, `studio-ui`, that runs the
   Content Studio page tests in jsdom with React Testing Library. Each Worker
-  is tested on its own: `studio-api` with a test SuperAdmin email address, and
-  `studio-web` with a stand-in `studio-api`.
+  is tested on its own: `studio-api` with a test SuperAdmin email address and
+  a local Content D1 with every migration applied, and `studio-web` with a
+  stand-in `studio-api`. The Workers-runtime projects have a 30-second test
+  timeout, because the first request starts the Worker, which is slow from
+  the repository on a Windows drive.
 - `pnpm run test:e2e` runs both Content Studio Workers locally as two
   `wrangler dev` processes, connected through Wrangler's local dev registry,
   and tests them in Chromium with Playwright. Tokens come from a local
-  stand-in for Access's key server, so the test needs no credentials.
-- Vitest tests are named `tests/FR-<number>/*.test.ts`; FR-00003 keeps them
-  in subfolders, `api/`, `web/`, `ui/`, and `e2e/`. Page tests end in
+  stand-in for Access's key server, `studio-api` gets a fresh local Content D1
+  with every migration applied, and a local stand-in replaces Cloudflare's
+  API, so the test needs no credentials. The run uses its own Wrangler dev
+  registry.
+- Vitest tests are named `tests/FR-<number>/*.test.ts`; FR-00003 and
+  FR-00004 keep them in subfolders, `api/`, `web/`, `ui/`, and `e2e/`. Page tests end in
   `.test.tsx` and end-to-end tests in `.e2e.ts`. Shell tests are named
   `tests/FR-<number>/*_test.sh`.
 - `pnpm test` runs the Vitest tests and `pnpm run typecheck` checks the types,
-  including the Content Studio pages and the FR-00003 tests.
+  including the Content Studio pages and the FR-00003 and FR-00004 tests.
 - Tests that need Cloudflare access are recorded as blocked when the credential
   file is missing.
 
@@ -75,12 +85,18 @@ Terraform creates each Worker; Wrangler `4.148.0` uploads its code with
 `CLOUDFLARE_EMAIL`, and `CLOUDFLARE_ACCOUNT_ID` from the owner's credential
 file. A deploy changes the live Worker and needs the owner's approval.
 
-Content Studio is deployed `studio-api` first, then `studio-web`:
+Content Studio is deployed in this order: any new Content D1 migrations are
+applied to Cloudflare first, then `studio-api`, then `studio-web`. Applying a
+migration to Cloudflare needs the owner's approval, as described in
+[Data services](data-services.md).
 
 - `studio-api`'s `deploy:dev` runs `devops/deploy-studio-api.sh`, which passes
-  `STUDIO_SUPERADMIN_EMAIL` from the credential file to Wrangler as the
-  `SUPERADMIN_EMAIL` variable. It refuses to run when the address is not set,
-  masks the address in Wrangler's output, and returns Wrangler's exit status.
+  `STUDIO_SUPERADMIN_EMAIL` and `CLOUDFLARE_ACCOUNT_ID` from the credential
+  file to Wrangler as the `SUPERADMIN_EMAIL` and `CF_ACCOUNT_ID` variables. It
+  refuses to run when the address is not set, masks both values in Wrangler's
+  output, and returns Wrangler's exit status. Because `CF_ACCESS_GROUP_TOKEN`
+  is declared as a required secret, the deploy fails when the secret has not
+  been stored.
 - `studio-web`'s `deploy:dev` builds the pages with Vite, then deploys.
 
 Before every deploy, the whole local test suite runs, including
@@ -111,3 +127,19 @@ pass against the deployed Workers, and ShellCheck reports no findings. The
 FR-00000, FR-00001, and FR-00002 tests still pass. Verified from a clean clone
 of commit `2ca1885`: `pnpm install --frozen-lockfile`, `pnpm run typecheck`,
 and every test, including the end-to-end and Terraform tests.
+
+FR-00004, accepted on 2026-10-14. `pnpm test` passed 128 tests in the Workers
+runtime and jsdom, `pnpm run typecheck` passed, and `pnpm run test:e2e` passed
+4 tests in Chromium. `tests/FR-00004/terraform_test.sh` passed 8 tests and
+`tests/FR-00004/db_query_test.sh` 18. All FR-00000 to FR-00003 shell tests
+still pass, including `tests/FR-00003/deployed_test.sh`, and ShellCheck
+reports no findings. On the owner's machine, `pnpm test` first passed 127 of
+128, the one failure being the gateway timeout that led to the 30-second
+timeout. Verified from a clean clone of commit `5d33b5f` in a separate Linux
+environment: `pnpm install --frozen-lockfile`, `pnpm run typecheck`,
+`pnpm test` (128 passed), every shell test that needs no credentials or
+network, and ShellCheck. The end-to-end, Terraform, and deployed tests were
+run on the owner's machine against the same files. The clean clone also found
+that `devops/db/query.sh` and its test had been committed without the
+executable bit, because `core.filemode` is off on the Windows drive; commit
+`5d33b5f` fixes that.

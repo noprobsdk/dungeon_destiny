@@ -7,13 +7,14 @@ and helps fix what is missing.
 Sources: [FR-00000: Terraform setup](../../FR/FR-00000-terraform-setup/README.md),
 [FR-00001: Worker dev workflow](../../FR/FR-00001-worker-dev-workflow/README.md),
 [FR-00002: GitHub CLI onboarding](../../FR/FR-00002-github-cli-onboarding/README.md),
-[FR-00003: Worker access policy](../../FR/FR-00003-worker-access-policy/README.md).
+[FR-00003: Worker access policy](../../FR/FR-00003-worker-access-policy/README.md),
+[FR-00004: Content D1 and user model](../../FR/FR-00004-content-d1-user-model/README.md).
 
 ## Script
 
 | Item | Value |
 |---|---|
-| Script | `devops/onboarding.sh`, written in Bash and checked with ShellCheck |
+| Script | `devops/onboarding.sh`, written in Bash and checked with ShellCheck; a file-wide disable of SC2317 and SC2329, with its reason, covers the `check_*` and `fix_*` functions, which are called by name and which ShellCheck reports as unreachable |
 | How to run it | `devops/README.md` |
 | Manual setup steps | `doc/howto-cloudflare-setup.md` |
 | Credential file | `~/.config/dungeon-destiny/cloudflare.env`, mode `600` in a mode `700` folder |
@@ -41,6 +42,10 @@ Every check runs and is reported as passed, failed, or skipped:
 
 The script exits with status 1 when any check fails and 0 when all pass. It
 can be run again at any time.
+
+The Cloudflare API token for the Content Studio Access group is not checked:
+it is not in the credential file but stored only as a Worker secret. Creating,
+storing, and rotating it is step 13 of `doc/howto-cloudflare-setup.md`.
 
 ## Modes
 
@@ -108,6 +113,12 @@ as a manual step. The FR-00000, FR-00001, and FR-00002 onboarding tests use a
 fake SuperAdmin email address and still pass. A SuperAdmin email address with
 a hidden byte broke pnpm and Terraform during implementation; the plain-email
 check was added for that reason.
+
+FR-00004, accepted on 2026-10-14. The owner's WSL was rebuilt before
+verification, and the credential file and the R2 token were recreated; then
+`devops/onboarding.sh` reported 21 passed. The onboarding tests now clear any
+real credential variables before they run, and they still pass, also from a
+clean clone of commit `5d33b5f`.
 
 The tests use stand-in programs and temporary credential files, so they need
 no network, no real credentials, and no GitHub account.

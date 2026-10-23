@@ -2,6 +2,30 @@
 
 Published changes to the as-built documentation, newest first.
 
+## 2026-10-20: FR-00004 published
+
+- **Change:** Published FR-00004. Created
+  `08-technical/service-architecture/data-services.md`, covering Content D1,
+  its tables and migrations, and `devops/db/query.sh`. Added the Access group
+  sync, the staff user model with roles and permissions, the Content Studio
+  API routes, and the error codes `PERMISSION_DENIED`, `VALIDATION_FAILED`,
+  `CONFLICT`, and `ACCESS_SYNC_FAILED` to `access-and-edge.md`; the Mantine
+  layout and the Users, User, Roles, Role, and Permissions pages to
+  `frontends.md`; `dd-dev-content`, the Access group, the new Access policy,
+  and `studio-api`'s new bindings and secret to `deployment-model.md`; the new
+  packages, the migration step, and the test changes to
+  `delivery-pipeline.md`; and the ShellCheck note and the Access group token
+  to `developer-onboarding.md`.
+- **Source:** [FR-00004: Content D1 and user model](../FR/FR-00004-content-d1-user-model/README.md),
+  its `CHANGELOG.md`, and its `implementation_report.md`.
+- **Affected files:** `README.md`, `CHANGELOG.md`,
+  `08-technical/service-architecture/data-services.md`,
+  `08-technical/service-architecture/access-and-edge.md`,
+  `08-technical/service-architecture/frontends.md`,
+  `08-technical/service-architecture/deployment-model.md`,
+  `08-technical/service-architecture/delivery-pipeline.md`,
+  `08-technical/developer-onboarding.md`.
+
 ## 2026-10-20: FR-00003 published
 
 - **Change:** Published FR-00003. Created
