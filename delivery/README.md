@@ -75,7 +75,7 @@ New
 | [FR-00002: GitHub CLI onboarding](FR/FR-00002-github-cli-onboarding/README.md) | Complete | 2026-10-08 |
 | [FR-00003: Worker access policy](FR/FR-00003-worker-access-policy/README.md) | Complete | 2026-10-09 |
 | [FR-00004: Content D1 and user model](FR/FR-00004-content-d1-user-model/README.md) | Complete | 2026-10-10 |
-| [FR-00005: Godot Android client skeleton](FR/FR-00005-godot-android-client/README.md) | In Progress | 2026-11-07 |
+| [FR-00005: Godot Android client skeleton](FR/FR-00005-godot-android-client/README.md) | In Review | 2026-11-07 |
 
 A Feature Request README uses one of the Feature Request statuses defined above. The Feature Request list
 is updated whenever a Feature Request folder is added or its status changes.

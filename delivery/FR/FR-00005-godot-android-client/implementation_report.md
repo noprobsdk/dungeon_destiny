@@ -15,7 +15,9 @@ device serial numbers, or the full `gateway` address.
 | `apps/game-client/` | The Godot 4.6.3 project: `scenes/loading_screen.tscn`, the scripts `loading_screen.gd`, `api_client.gd`, `http_transport.gd`, `response_parser.gd`, `version_check.gd`, and `app_info.gd`, the project settings, the "Android (dev)" export preset, GUT 9.6.1 under `addons/gut/`, and the client tests in `tests/FR-00005/`. |
 | `devops/game-client/build-apk.sh` | Runs the client tests and builds the debug APK; `--install` installs it with Windows `adb.exe` from WSL. |
 | `devops/game-client/device-bridge.sh` | A request bridge for testing on a USB device from a shell that cannot reach USB (finding 1). |
-| `devops/onboarding.sh`, `devops/README.md` | The game-client toolchain checks (Godot, export templates, JDK 17, Android SDK 36) and the APK build and device bridge how-to. |
+| `devops/logs/tail.sh` | Prints the last `gateway` log lines kept in Workers Logs (`-n`, default 10), read-only, through Cloudflare's Workers Observability query API. |
+| `devops/onboarding.sh`, `devops/README.md` | The game-client toolchain checks (Godot, export templates, JDK 17, Android SDK 36), and the how-to for the APK build, the device bridge, and reading the `gateway` logs. |
+| `AGENTS.md` | The game-client, log, and threshold-deploy commands, and the FR-00005 tests. |
 | `package.json`, `vitest.config.ts` | The `gateway-thresholds` and `gateway-misconfigured` test projects. |
 | `tests/FR-00005/` | The FR-00005 Vitest, shell, deployed, and screen tests. |
 | `tests/FR-00000/` to `tests/FR-00003/` | The onboarding harnesses use a stand-in client toolchain, with ShellCheck source directives (finding 4). |
@@ -23,7 +25,7 @@ device serial numbers, or the full `gateway` address.
 Final deployed state: `dd-dev-gateway` version `4fc61d0d`, with
 `APP_MIN_BUILD_ANDROID` and `APP_RECOMMENDED_BUILD_ANDROID` at `1` and the dev
 update link; Workers Logs on; `terraform plan` reports no changes. The code is
-not committed yet.
+committed and pushed to `main`.
 
 ## Implementation decisions
 
@@ -93,6 +95,12 @@ Vitest 4.1.11, pnpm 12.10.1. Windows platform-tools (adb 37.0.1) for USB.
    required" with the Update button; a relaunch about 30 seconds later reached
    Ready. Players can see mixed answers for a few seconds after any threshold
    change.
+7. **Workers Logs leaves out fields that are `null`.** The `gateway` writes
+   `"code": null` on success, but the stored line has no `code`; lines with an
+   error code keep it.
+8. **The Workers Observability query counts every event towards its limit**,
+   including Cloudflare's own invocation events, so `devops/logs/tail.sh` asks
+   for four times as many events as lines.
 
 ## Test results
 
@@ -108,6 +116,7 @@ Vitest 4.1.11, pnpm 12.10.1. Windows platform-tools (adb 37.0.1) for USB.
 | `tests/FR-00005/client_scope_test.sh` | 4 passed |
 | `tests/FR-00005/config_test.sh` | 3 passed |
 | `tests/FR-00005/device_bridge_test.sh` | 6 passed |
+| `tests/FR-00005/logs_tail_test.sh` | 8 passed |
 | `tests/FR-00005/onboarding_client_test.sh` | passed |
 | FR-00000 to FR-00004 shell tests | all passed, including `tests/FR-00000/terraform_test.sh` |
 | ShellCheck | no findings |
@@ -156,6 +165,12 @@ APK `0.1.0 (build 1)`:
   Google Play; back in the app it stays on "Update required";
 - back at `1`/`1`: Ready.
 
+Workers Logs: `devops/logs/tail.sh` showed the requests of the deployed tests
+after the last deploy, including the HTTP 426 `APP_UPDATE_REQUIRED` and
+HTTP 400 `INVALID_APP_HEADERS` lines, and the tablet's two Ready requests,
+found again by their `requestId`. The lines hold only the fields in Section 7:
+no IP addresses, other headers, query strings, or tokens.
+
 Section 16 asks for these checks on a phone. On 2026-11-10 the project owner
 accepted the tablet in place of a phone; no phone was tested.
 
@@ -164,14 +179,7 @@ not committed.
 
 ## Open before In Review
 
-- **Workers Logs lookup.** A request from the deployed tests has not yet been
-  found by its `requestId` in the Cloudflare dashboard.
-- **`AGENTS.md` commands** for the client tests, the APK build, and the
-  FR-00005 tests are not added yet (Section 2, step 7).
-- **The how-to for reading the `gateway` logs** (`wrangler tail` and the
-  dashboard) is not written yet; `devops/README.md` covers the APK build and
-  the device bridge.
-- **Commit**, the GitHub Issue, and the `CHANGELOG.md` entry for this report.
+None. The Feature Request is tracked in GitHub Issue #6.
 
 ## Limitations and follow-up work
 

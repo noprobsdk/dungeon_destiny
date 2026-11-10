@@ -2,6 +2,25 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-11-10: Implemented, moved to In Review
+
+- **Change:** Implemented FR-00005: `GET /app/version`, the build check, and
+  the request log in the `gateway` Worker; Workers Logs in Terraform and
+  Wrangler; the Godot 4.6.3 Android client with the loading, update, and
+  connection error screens and GUT tests; the game-client onboarding checks,
+  the APK build script, the device bridge, and `devops/logs/tail.sh`; the
+  how-to for the APK build and the `gateway` logs; the `AGENTS.md` commands;
+  and the tests. Recorded GitHub Issue #6 under Tracking and moved the status
+  to `In Review`.
+- **Reason:** Steps 2 to 8 of the implementation sequence are complete. Every
+  Section 16 check passed, on an Android tablet that the project owner
+  accepted in place of a phone. The Update button is recorded as an approved
+  deviation in `implementation_report.md`.
+- **Affected files:** `README.md`, `implementation_report.md`, `CHANGELOG.md`;
+  the Feature Request list in `delivery/README.md`.
+- **Verification:** All files match their approved proposals, and the
+  implementation report lists nothing open.
+
 ## 2026-11-10: Implementation report added, with the Update button
 
 - **Change:** Created `implementation_report.md`. It records the work built
