@@ -9,10 +9,10 @@
 #
 # Usage, from anywhere in the repository:
 #   source ~/.config/dungeon-destiny/cloudflare.env
-#   devops/logs/tail.sh [count]
+#   devops/logs/tail.sh [-n lines]
 #
-# count is the number of lines, a whole number from 1 to 100; the default is
-# 10. Times are in UTC. For live lines, use wrangler tail (devops/README.md).
+# -n is the number of lines, a whole number from 1 to 100; the default is 10.
+# Times are in UTC. For live lines, use wrangler tail (devops/README.md).
 #
 # Exit status: 0 on success, 1 when Cloudflare refuses the query, or 2 for a
 # usage error or missing credentials.
@@ -26,7 +26,14 @@ usage() {
   sed -n 's/^# \{0,1\}//; /^Usage,/,/^Exit status/p' "${BASH_SOURCE[0]}" | sed '$d' >&2
 }
 
-count="${1:-10}"
+count=10
+if [ $# -gt 0 ]; then
+  if [ "$1" != "-n" ] || [ $# -ne 2 ]; then
+    usage
+    exit 2
+  fi
+  count="$2"
+fi
 if ! [[ "$count" =~ ^[0-9]{1,3}$ ]] || [ "$count" -lt 1 ] || [ "$count" -gt 100 ]; then
   usage
   exit 2

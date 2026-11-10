@@ -178,14 +178,14 @@ source ~/.config/dungeon-destiny/cloudflare.env
 pnpm --filter @dungeon-destiny/gateway exec wrangler tail --env dev --format pretty
 ```
 
-Show the last `gateway` log lines kept in Workers Logs (default 10, at most
-100). It only reads, prints only the `gateway`'s own log fields, and needs no
-approval.
+Show the last `gateway` log lines kept in Workers Logs (`-n`, default 10, at
+most 100). It only reads, prints only the `gateway`'s own log fields, and
+needs no approval.
 
 ```bash
 source ~/.config/dungeon-destiny/cloudflare.env
 devops/logs/tail.sh
-devops/logs/tail.sh 50
+devops/logs/tail.sh -n 50
 ```
 
 The app version thresholds and the update link are Wrangler variables in

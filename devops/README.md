@@ -228,13 +228,13 @@ JSON log lines.
 `logs/tail.sh` prints the last lines kept in Workers Logs, oldest first, as
 tab-separated columns with the time in UTC. It reads the last 3 days through
 Cloudflare's Workers Observability query API, never changes anything, and
-prints only the `gateway`'s own log fields. The count is 1 to 100; the
-default is 10.
+prints only the `gateway`'s own log fields. `-n` sets the number of lines,
+1 to 100; the default is 10.
 
 ```bash
 source ~/.config/dungeon-destiny/cloudflare.env
 devops/logs/tail.sh        # the last 10 lines
-devops/logs/tail.sh 50     # the last 50 lines
+devops/logs/tail.sh -n 50  # the last 50 lines
 tests/FR-00005/logs_tail_test.sh   # its tests, with a stand-in curl
 ```
 

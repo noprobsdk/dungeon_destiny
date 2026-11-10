@@ -95,11 +95,12 @@ fi
 teardown
 
 setup
-name="FR-00005: tail rejects a count that is not a whole number from 1 to 100"
+name="FR-00005: tail rejects -n without a whole number from 1 to 100, and other arguments"
 bad=""
-for count in abc 0 101 -5 1.5; do
-  run_tail "$count"
-  if [ "$STATUS" -ne 2 ] || [ -s "$CURL_LOG" ]; then bad="$bad $count"; fi
+for args in "-n abc" "-n 0" "-n 101" "-n -5" "-n 1.5" "-n" "10" "-x" "-n 5 extra"; do
+  # shellcheck disable=SC2086  # each case is split into its arguments on purpose
+  run_tail $args
+  if [ "$STATUS" -ne 2 ] || [ -s "$CURL_LOG" ]; then bad="$bad [$args]"; fi
 done
 if [ -z "$bad" ]; then
   pass "$name"
@@ -124,9 +125,9 @@ teardown
 
 setup
 name="FR-00005: tail asks for four times as many events as lines, because Cloudflare's own events count too"
-run_tail 10
+run_tail -n 10
 limit_10="$(jq -r '.limit' "$CURL_BODY")"
-run_tail 3
+run_tail -n 3
 limit_3="$(jq -r '.limit' "$CURL_BODY")"
 if [ "$limit_10" = "40" ] && [ "$limit_3" = "12" ]; then
   pass "$name"
@@ -149,8 +150,8 @@ fi
 teardown
 
 setup
-name="FR-00005: tail keeps only the last N request lines"
-run_tail 2
+name="FR-00005: tail -n keeps only the last N request lines"
+run_tail -n 2
 lines="$(printf '%s\n' "$OUT" | tail -n +2 | awk -F'\t' '{print $NF}' | tr '\n' ' ')"
 if [ "$STATUS" -eq 0 ] && [ "$lines" = "rid-2 rid-3 " ]; then
   pass "$name"
