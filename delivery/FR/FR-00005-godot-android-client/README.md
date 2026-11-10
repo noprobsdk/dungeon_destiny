@@ -1,6 +1,6 @@
 # FR-00005: Godot Android client skeleton
 
-- **Status:** In Review
+- **Status:** Pending documentation
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** [GitHub Issue #6](https://github.com/noprobsdk/dungeon_destiny/issues/6).

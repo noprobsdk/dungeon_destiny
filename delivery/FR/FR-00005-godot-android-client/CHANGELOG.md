@@ -2,6 +2,19 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-11-10: Accepted, moved to Pending documentation
+
+- **Change:** The project owner accepted the implementation against the
+  Section 17 acceptance criteria. Moved the status to `Pending documentation`.
+- **Reason:** All Section 16 checks passed, on an Android tablet that the
+  project owner accepted in place of a phone; the dev thresholds are back at
+  `1`; `implementation_report.md` is complete; no decisions are unresolved;
+  and the one deviation, the Update button, was approved by the owner.
+- **Affected files:** `README.md`, `CHANGELOG.md`; the Feature Request list in
+  `delivery/README.md`.
+- **Verification:** All files match their approved proposals. The as-built
+  documentation is still to be published.
+
 ## 2026-11-10: Implemented, moved to In Review
 
 - **Change:** Implemented FR-00005: `GET /app/version`, the build check, and
