@@ -2,6 +2,32 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-11-10: Implementation report added, with the Update button
+
+- **Change:** Created `implementation_report.md`. It records the work built
+  so far, implementation decisions 1 to 13, and the test, deployment, and
+  tablet results. It also records one approved deviation: an Update button on
+  both update screens, with its link served by the `gateway` as `updateUrl`
+  from the Wrangler variable `APP_UPDATE_URL_ANDROID`. Its "Open before In
+  Review" section lists the phone check, the Workers Logs lookup, the
+  `AGENTS.md` commands, and the log-reading how-to. `README.md` is unchanged.
+- **Reason:** During the tablet test, the project owner asked for an upgrade
+  button whose link comes from the backend, and chose to record it in the
+  implementation report instead of changing the specification.
+- **Affected files:** `implementation_report.md`, `CHANGELOG.md`.
+- **Verification:** `implementation_report.md` matches its approved proposal.
+  The status stays `In Progress`.
+
+## 2026-11-08: Moved to In Progress
+
+- **Change:** Set the design baseline commit to `bfee2a3` and moved the status
+  through `Backlog` to `In Progress`.
+- **Reason:** The specification was committed; there are no unresolved
+  decisions or blockers. The project owner approved implementation decisions
+  1 to 13 on 2026-11-07.
+- **Affected files:** `README.md`, `CHANGELOG.md`.
+- **Verification:** Both files match their approved proposals.
+
 ## 2026-11-07: Request logging added
 
 - **Change:** Added `gateway` request logging: Workers Logs turned on for

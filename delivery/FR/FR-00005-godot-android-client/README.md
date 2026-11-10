@@ -1,6 +1,6 @@
 # FR-00005: Godot Android client skeleton
 
-- **Status:** In Specification
+- **Status:** In Progress
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** GitHub Issue not created yet.
@@ -97,7 +97,7 @@ maintenance switch.
 - Design reference, not copied: the POC Godot project's portrait layout and
   Mobile renderer.
 
-Design baseline commit: the commit that adds DD-022 and DD-023.
+Design baseline commit: `bfee2a3`.
 
 Source-document readiness gate: passes for this scope. DD-023 defines the
 version check. The open decisions on CI/CD and game-server deployment do not
