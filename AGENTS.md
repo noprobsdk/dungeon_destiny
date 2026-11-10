@@ -13,11 +13,12 @@ Content Studio, database, and Godot implementation.
 Setup, run, test, lint, and format commands are added here by the Feature
 Request that introduces them. Run every command from the repository root.
 
-### Onboarding (FR-00000, FR-00001, FR-00002, FR-00003)
+### Onboarding (FR-00000, FR-00001, FR-00002, FR-00003, FR-00005)
 
-Check that this machine can run Terraform, build and test the Workers, and
-deploy Content Studio. In a terminal the script is guided and asks before
-changing anything; `--check` only reads. Agents use `--check`.
+Check that this machine can run Terraform, build and test the Workers,
+deploy Content Studio, and build the game client. In a terminal the script
+is guided and asks before changing anything; `--check` only reads. Agents
+use `--check`.
 
 ```bash
 devops/onboarding.sh
@@ -147,6 +148,60 @@ Signing in uses a one-time PIN sent to the owner's email. Agents cannot sign
 in; the owner checks sign-in by hand after a deploy that touches `studio-web`,
 Cloudflare Access, or the SuperAdmin.
 
+### Game client (FR-00005)
+
+The Godot game client is in `apps/game-client/`. Godot 4.6.3, the Android
+SDK, and JDK 17 are in WSL, so run these commands there. Build the debug APK
+(it runs the client tests first), or build and install it on the one device
+that `adb devices` lists. WSL cannot reach USB, so `--install` uses Windows
+`adb.exe`; `devops/README.md` describes the setup. The APK and the debug
+keystore are never committed.
+
+```bash
+devops/game-client/build-apk.sh
+devops/game-client/build-apk.sh --install
+```
+
+From Windows, install and start the APK directly:
+
+```bash
+adb install -r apps/game-client/build/dungeon-destiny-dev.apk
+adb shell monkey -p com.dungeondestiny.game.dev -c android.intent.category.LAUNCHER 1
+adb logcat -s godot:V
+```
+
+Watch the `gateway` requests live while the app starts. Each log line has the
+same `requestId` as the app's log.
+
+```bash
+source ~/.config/dungeon-destiny/cloudflare.env
+pnpm --filter @dungeon-destiny/gateway exec wrangler tail --env dev --format pretty
+```
+
+Show the last `gateway` log lines kept in Workers Logs (default 10, at most
+100). It only reads, prints only the `gateway`'s own log fields, and needs no
+approval.
+
+```bash
+source ~/.config/dungeon-destiny/cloudflare.env
+devops/logs/tail.sh
+devops/logs/tail.sh 50
+```
+
+The app version thresholds and the update link are Wrangler variables in
+`apps/gateway/wrangler.jsonc` (DD-023). To test the update screens, deploy dev
+with a changed value, then deploy again without `--var` to go back to the
+committed values. `pnpm run deploy:dev -- --var …` ignores the `--var`, so use
+`exec`. Each deploy needs explicit approval, and raising
+`APP_MIN_BUILD_ANDROID` locks out older apps. A deploy takes a few seconds to
+reach every location.
+
+```bash
+source ~/.config/dungeon-destiny/cloudflare.env
+pnpm --filter @dungeon-destiny/gateway exec wrangler deploy --env dev --tag "dev-$(date -u +%Y%m%d-%H%M%S)" --var APP_RECOMMENDED_BUILD_ANDROID:2
+pnpm --filter @dungeon-destiny/gateway exec wrangler deploy --env dev --tag "dev-$(date -u +%Y%m%d-%H%M%S)"
+```
+
 ### Before and after a deploy (FR-00003)
 
 Before every deploy, for any Feature Request, run the whole local test suite
@@ -168,7 +223,7 @@ Reading with `gh` needs no approval. Posting to GitHub is outward-facing and
 the repository is public: show every comment, issue, pull request, or status
 change to the owner and get approval before posting it.
 
-### Tests and lint (FR-00000, FR-00001, FR-00002, FR-00003, FR-00004)
+### Tests and lint (FR-00000, FR-00001, FR-00002, FR-00003, FR-00004, FR-00005)
 
 ```bash
 tests/FR-00000/onboarding_test.sh
@@ -186,10 +241,19 @@ tests/FR-00003/deploy_script_test.sh
 tests/FR-00003/deployed_test.sh
 tests/FR-00004/terraform_test.sh
 tests/FR-00004/db_query_test.sh
+tests/FR-00005/onboarding_client_test.sh
+tests/FR-00005/config_test.sh
+tests/FR-00005/client_scope_test.sh
+tests/FR-00005/client_test.sh
+tests/FR-00005/screens_test.sh
+tests/FR-00005/build_apk_test.sh
+tests/FR-00005/device_bridge_test.sh
+tests/FR-00005/logs_tail_test.sh
+tests/FR-00005/deployed_test.sh
 pnpm test
 pnpm run typecheck
 pnpm run test:e2e
-shellcheck devops/*.sh tests/FR-0000*/*.sh
+shellcheck devops/*.sh devops/game-client/*.sh devops/logs/*.sh tests/FR-0000*/*.sh
 ```
 
 The onboarding, workspace, typecheck, guard, and Worker Terraform tests need no
@@ -208,7 +272,15 @@ needs no credentials. `tests/FR-00004/db_query_test.sh` runs the query script
 against a stand-in Wrangler and needs no credentials. `pnpm test` also runs
 the FR-00004 tests against a local Content D1 with every migration applied,
 and `pnpm run test:e2e` runs the FR-00004 browser tests with a fresh local
-Content D1 and a local stand-in for Cloudflare's API.
+Content D1 and a local stand-in for Cloudflare's API. `pnpm test` also runs
+the FR-00005 `gateway` tests, including projects with raised and with invalid
+thresholds. `tests/FR-00005/client_test.sh` runs the Godot client tests
+headless with stubbed HTTP, and `screens_test.sh` renders every loading-screen
+state at phone and tablet sizes under Xvfb; both need Godot 4.6 in WSL. The
+other FR-00005 shell tests use stand-ins and need no credentials, network,
+or device.
+`tests/FR-00005/deployed_test.sh` calls the deployed `dd-dev-gateway` and
+changes nothing.
 
 ## Conventions
 

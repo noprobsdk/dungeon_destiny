@@ -121,6 +121,10 @@ export AWS_SECRET_ACCESS_KEY="fake-secret"
 export STUDIO_SUPERADMIN_EMAIL="superadmin@example.invalid"
 CREDS
   chmod 600 "$HOME/.config/dungeon-destiny/cloudflare.env"
+  # FR-00005: the game-client toolchain checks pass with stand-ins.
+  # shellcheck source-path=SCRIPTDIR source=../FR-00005/fake_client_toolchain.sh
+  . "$REPO_ROOT/tests/FR-00005/fake_client_toolchain.sh"
+  fake_client_toolchain
 }
 
 teardown() {

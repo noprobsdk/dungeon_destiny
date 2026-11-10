@@ -1,0 +1,31 @@
+; Engine configuration file.
+; FR-00005: the Dungeon Destiny game client (DD-022, DD-023).
+
+config_version=5
+
+[application]
+
+config/name="Dungeon Destiny"
+run/main_scene="res://scenes/loading_screen.tscn"
+config/features=PackedStringArray("4.6", "Mobile")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=405
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[dungeon_destiny]
+
+gateway_url="https://dd-dev-gateway.hj-d8e.workers.dev"
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true

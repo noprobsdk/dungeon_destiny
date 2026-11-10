@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- FR-00005: a simple original placeholder icon: a dark tile with a gold doorway. -->
+  <rect width="256" height="256" rx="40" fill="#14171f"/>
+  <path d="M78 206 V118 a50 50 0 0 1 100 0 V206 Z" fill="#c9a14a"/>
+  <path d="M100 206 V122 a28 28 0 0 1 56 0 V206 Z" fill="#14171f"/>
+</svg>

@@ -14,4 +14,11 @@ resource "cloudflare_worker" "gateway" {
   # the top-level Worker name in apps/gateway/wrangler.jsonc. Declaring them
   # here keeps Terraform and Wrangler from undoing each other.
   tags = ["cf:environment=dev", "cf:service=gateway"]
+
+  # FR-00005: Workers Logs, so the gateway's request log is kept and can be
+  # searched. apps/gateway/wrangler.jsonc declares the same setting, so neither
+  # undoes the other.
+  observability = {
+    enabled = true
+  }
 }

@@ -139,6 +139,10 @@ STUB
   mkdir -p "$WORK/repo/devops"
   cp "$SCRIPT" "$WORK/repo/devops/onboarding.sh"
   RUN_SCRIPT="$WORK/repo/devops/onboarding.sh"
+  # FR-00005: the game-client toolchain checks pass with stand-ins.
+  # shellcheck source-path=SCRIPTDIR source=../FR-00005/fake_client_toolchain.sh
+  . "$REPO_ROOT/tests/FR-00005/fake_client_toolchain.sh"
+  fake_client_toolchain
 }
 
 teardown() {

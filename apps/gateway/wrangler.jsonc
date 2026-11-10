@@ -12,7 +12,21 @@
       "workers_dev": true,
       "preview_urls": false,
       "vars": {
-        "ENVIRONMENT": "dev"
+        "ENVIRONMENT": "dev",
+        // FR-00005: the app version thresholds (DD-023). Raising the minimum
+        // supported build locks out older apps and needs the project owner's
+        // approval.
+        "APP_MIN_BUILD_ANDROID": "1",
+        "APP_RECOMMENDED_BUILD_ANDROID": "1",
+        // FR-00005: where the app's Update button leads; https only. Dev has
+        // no store page yet, so this proves the button and shows Play's
+        // "not found" page until one exists.
+        "APP_UPDATE_URL_ANDROID": "https://play.google.com/store/apps/details?id=com.dungeondestiny.game.dev"
+      },
+      // FR-00005: Workers Logs. Terraform declares the same setting in
+      // infra/terraform/envs/dev/workers.tf, so neither undoes the other.
+      "observability": {
+        "enabled": true
       },
       "version_metadata": {
         "binding": "CF_VERSION_METADATA"

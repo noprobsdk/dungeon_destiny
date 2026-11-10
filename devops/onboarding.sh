@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# FR-00000 onboarding check, extended by FR-00001, FR-00002, and FR-00003.
+# FR-00000 onboarding check, extended by FR-00001, FR-00002, FR-00003, and
+# FR-00005.
 #
 # Checks that this machine has the packages and access needed to run
-# Terraform, build and test the Workers, and deploy Content Studio for
-# Dungeon Destiny.
+# Terraform, build and test the Workers, deploy Content Studio, and build the
+# Godot game client for Dungeon Destiny.
 #
 # Guided mode (the default in a terminal, or --guided) walks through each
 # failed check and asks Yes or No before running an install command, creating
@@ -24,6 +25,20 @@ set -u
 readonly MIN_TERRAFORM="1.11.0"
 readonly MIN_CURL="7.75.0"
 readonly NODE_MAJOR="24"
+# FR-00005: the game-client toolchain. devops/game-client/build-apk.sh uses the
+# same versions and locations.
+readonly GODOT_VERSION="4.6.3"
+readonly GODOT_RELEASE="https://github.com/godotengine/godot/releases/download/$GODOT_VERSION-stable"
+readonly GODOT_DIR="$HOME/.local/opt/godot/$GODOT_VERSION"
+readonly GODOT_LINK="$HOME/.local/bin/godot"
+readonly GODOT_TEMPLATES="$HOME/.local/share/godot/export_templates/$GODOT_VERSION.stable"
+readonly JDK_MAJOR="17"
+readonly ANDROID_SDK="${ANDROID_HOME:-$HOME/Android/Sdk}"
+readonly ANDROID_PLATFORM="android-36"
+readonly ANDROID_BUILD_TOOLS="36.0.0"
+# Ubuntu's installer package for Google's Android command-line tools, which
+# provide sdkmanager. It downloads them from Google and checks their checksum.
+readonly ANDROID_CMDLINE_TOOLS_PACKAGE="google-android-cmdline-tools-13.0-installer"
 # pnpm's standalone installer uses this folder. pnpm 12 puts the pnpm command
 # in its bin folder; older installers put it in the folder itself.
 readonly PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
@@ -404,6 +419,160 @@ fix_chromium() {
   (cd "$REPO_ROOT" && pnpm exec playwright install --with-deps chromium)
 }
 
+# --- Game-client toolchain (FR-00005) ------------------------------------------
+
+godot_bin() {
+  if [ -n "${GODOT:-}" ]; then echo "$GODOT"; elif [ -x "$GODOT_LINK" ]; then echo "$GODOT_LINK"; else command -v godot; fi
+}
+
+check_godot() {
+  local bin version
+  bin="$(godot_bin)"
+  if [ -z "$bin" ] || [ ! -x "$bin" ]; then
+    MSG="Godot $GODOT_VERSION is not installed"
+    HINT="run devops/onboarding.sh and answer Yes to install Godot $GODOT_VERSION"
+    return 1
+  fi
+  version="$("$bin" --headless --version 2>/dev/null | tail -n 1)"
+  case "$version" in
+    "$GODOT_VERSION".*) MSG="Godot $GODOT_VERSION is installed ($bin)"; return 0 ;;
+  esac
+  MSG="Godot ${version:-unknown} is installed, but version $GODOT_VERSION is required"
+  HINT="run devops/onboarding.sh and answer Yes to install Godot $GODOT_VERSION"
+  return 1
+}
+
+# Downloads one file of the Godot release and checks it against the release's
+# SHA-512 list. Usage: godot_download NAME DIR
+godot_download() {
+  local name="$1" dir="$2" expected
+  curl -fL --progress-bar -o "$dir/$name" "$GODOT_RELEASE/$name" &&
+    curl -fsSL -o "$dir/SHA512-SUMS.txt" "$GODOT_RELEASE/SHA512-SUMS.txt" || return 1
+  expected="$(awk -v n="$name" '$2 == n {print $1}' "$dir/SHA512-SUMS.txt")"
+  if [ -z "$expected" ] || [ "$(sha512sum "$dir/$name" | awk '{print $1}')" != "$expected" ]; then
+    echo "      The SHA-512 checksum of $name does not match; nothing was installed."
+    return 1
+  fi
+}
+
+fix_godot() {
+  local zip="Godot_v$GODOT_VERSION-stable_linux.x86_64.zip" tmp
+  echo "      This downloads Godot $GODOT_VERSION (about 72 MB) from Godot's GitHub releases,"
+  echo "      checks its SHA-512 checksum, installs it in $GODOT_DIR,"
+  echo "      and links it as $GODOT_LINK. It needs no sudo."
+  ask "      Install Godot $GODOT_VERSION now?" || return 1
+  tmp="$(mktemp -d)" || return 1
+  if godot_download "$zip" "$tmp" && unzip -q -o "$tmp/$zip" -d "$tmp"; then
+    mkdir -p "$GODOT_DIR" "$(dirname "$GODOT_LINK")" &&
+      mv "$tmp/Godot_v$GODOT_VERSION-stable_linux.x86_64" "$GODOT_DIR/godot" &&
+      chmod +x "$GODOT_DIR/godot" &&
+      ln -sf "$GODOT_DIR/godot" "$GODOT_LINK"
+  fi
+  local result=$?
+  rm -rf "$tmp"
+  case ":$PATH:" in
+    *":$(dirname "$GODOT_LINK"):"*) ;;
+    *) echo "      $(dirname "$GODOT_LINK") is not on your PATH yet; open a new terminal." ;;
+  esac
+  return "$result"
+}
+
+check_godot_templates() {
+  if [ -f "$GODOT_TEMPLATES/android_debug.apk" ]; then
+    MSG="Godot's Android export templates for $GODOT_VERSION are installed"
+    return 0
+  fi
+  MSG="Godot's Android export templates for $GODOT_VERSION are not installed"
+  HINT="run devops/onboarding.sh and answer Yes to install the export templates"
+  return 1
+}
+
+fix_godot_templates() {
+  local tpz="Godot_v$GODOT_VERSION-stable_export_templates.tpz" tmp
+  echo "      This downloads Godot's export templates (about 1.26 GB) from Godot's GitHub"
+  echo "      releases, checks the SHA-512 checksum, and keeps only the Android templates"
+  echo "      in $GODOT_TEMPLATES. It needs no sudo."
+  ask "      Download the export templates now?" || return 1
+  tmp="$(mktemp -d)" || return 1
+  godot_download "$tpz" "$tmp" &&
+    mkdir -p "$GODOT_TEMPLATES" &&
+    unzip -q -o -j "$tmp/$tpz" 'templates/android_*' 'templates/version.txt' -d "$GODOT_TEMPLATES"
+  local result=$?
+  rm -rf "$tmp"
+  return "$result"
+}
+
+check_jdk() {
+  local javac version
+  if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/javac" ]; then javac="$JAVA_HOME/bin/javac"; else javac="$(command -v javac)"; fi
+  if [ -z "$javac" ]; then
+    MSG="JDK $JDK_MAJOR is not installed"
+    HINT="sudo apt-get install -y openjdk-$JDK_MAJOR-jdk-headless"
+    return 1
+  fi
+  version="$("$javac" -version 2>&1 | awk '{print $2}')"
+  if [ "${version%%.*}" = "$JDK_MAJOR" ]; then
+    MSG="JDK $JDK_MAJOR is installed ($version)"
+    return 0
+  fi
+  MSG="JDK ${version:-unknown} is installed, but JDK $JDK_MAJOR is required"
+  HINT="sudo apt-get install -y openjdk-$JDK_MAJOR-jdk-headless, and set JAVA_HOME to it"
+  return 1
+}
+
+fix_jdk() { install_package "openjdk-$JDK_MAJOR-jdk-headless"; }
+
+check_android_sdk() {
+  local part missing=""
+  for part in "platform-tools/adb" "build-tools/$ANDROID_BUILD_TOOLS/apksigner" "platforms/$ANDROID_PLATFORM"; do
+    [ -e "$ANDROID_SDK/$part" ] || missing="$missing $part"
+  done
+  if [ -z "$missing" ]; then
+    MSG="the Android SDK is installed in $ANDROID_SDK ($ANDROID_PLATFORM, build tools $ANDROID_BUILD_TOOLS)"
+    return 0
+  fi
+  MSG="the Android SDK in $ANDROID_SDK is missing:$missing (need $ANDROID_PLATFORM, build tools $ANDROID_BUILD_TOOLS)"
+  HINT="sudo apt-get install -y $ANDROID_CMDLINE_TOOLS_PACKAGE, then sdkmanager --sdk_root=$ANDROID_SDK platform-tools 'platforms;$ANDROID_PLATFORM' 'build-tools;$ANDROID_BUILD_TOOLS'"
+  return 1
+}
+
+# The sdkmanager command: on PATH, or in Google's command-line tools that
+# Ubuntu's installer package puts under /usr/lib/android-sdk.
+sdkmanager_bin() {
+  if has sdkmanager; then
+    command -v sdkmanager
+    return
+  fi
+  local candidate found=""
+  for candidate in /usr/lib/android-sdk/cmdline-tools/*/bin/sdkmanager; do
+    [ -x "$candidate" ] && found="$(printf '%s\n%s\n' "$found" "$candidate" | sort -V | tail -n 1)"
+  done
+  [ -n "$found" ] && echo "$found"
+}
+
+fix_android_sdk() {
+  local sdkmanager
+  sdkmanager="$(sdkmanager_bin)"
+  if [ -z "$sdkmanager" ]; then
+    echo "      The Android SDK is installed with sdkmanager, from Google's Android command-line"
+    echo "      tools. Ubuntu's $ANDROID_CMDLINE_TOOLS_PACKAGE package downloads them."
+    install_package "$ANDROID_CMDLINE_TOOLS_PACKAGE" || return 1
+    hash -r
+    sdkmanager="$(sdkmanager_bin)"
+    if [ -z "$sdkmanager" ]; then
+      echo "      sdkmanager was not found after the install."
+      return 1
+    fi
+  fi
+  echo "      This downloads platform-tools, $ANDROID_PLATFORM, and build tools $ANDROID_BUILD_TOOLS from"
+  echo "      Google into $ANDROID_SDK. Google's Android SDK licence is shown first;"
+  echo "      read it and answer its questions yourself."
+  ask "      Install the Android SDK now?" || return 1
+  mkdir -p "$ANDROID_SDK" &&
+    "$sdkmanager" --sdk_root="$ANDROID_SDK" --licenses &&
+    "$sdkmanager" --sdk_root="$ANDROID_SDK" "platform-tools" "platforms;$ANDROID_PLATFORM" "build-tools;$ANDROID_BUILD_TOOLS"
+}
+
 # --- Credential file and values ----------------------------------------------
 
 check_credential_file() {
@@ -650,6 +819,10 @@ run check_node fix_node
 run check_pnpm fix_pnpm
 run check_dependencies fix_dependencies
 run check_chromium fix_chromium
+run check_godot fix_godot
+run check_godot_templates fix_godot_templates
+run check_jdk fix_jdk
+run check_android_sdk fix_android_sdk
 run check_credential_file fix_credential_file
 for var in "${REQUIRED_VARS[@]}"; do
   run check_value fix_value "$var"

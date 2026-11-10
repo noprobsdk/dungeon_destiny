@@ -33,6 +33,15 @@ export const ERROR_CODES = {
   // FR-00004: Cloudflare refused to update the Access group, so nothing was
   // saved.
   ACCESS_SYNC_FAILED: "ACCESS_SYNC_FAILED",
+  // FR-00005: the app headers are missing or invalid, or name an unknown
+  // platform (DD-023).
+  INVALID_APP_HEADERS: "INVALID_APP_HEADERS",
+  // FR-00005: the app's build is below the minimum supported build; the app
+  // must show "Update required" (DD-023). Sent with HTTP 426.
+  APP_UPDATE_REQUIRED: "APP_UPDATE_REQUIRED",
+  // FR-00005: the Worker's own configuration is invalid, so it refuses to
+  // answer rather than guess.
+  SERVER_MISCONFIGURED: "SERVER_MISCONFIGURED",
 } as const;
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
@@ -59,6 +68,31 @@ export type ApiResponse<T> = {
   data: T;
   meta: ResponseMeta;
 };
+
+// --- App version check (FR-00005, DD-023) ---------------------------------
+
+// Every call from the game client to the gateway carries these two headers.
+export const APP_HEADERS = { platform: "X-App-Platform", build: "X-App-Build" } as const;
+
+// The platforms the gateway knows. iOS is added with the iOS build.
+export const APP_PLATFORMS = ["android"] as const;
+export type AppPlatform = (typeof APP_PLATFORMS)[number];
+
+// The `data` of a GET /app/version response.
+export type AppVersionData = {
+  platform: AppPlatform;
+  build: number;
+  minimumBuild: number;
+  recommendedBuild: number;
+  supported: boolean;
+  upToDate: boolean;
+  // The https link to the new version, or null when none is configured.
+  updateUrl: string | null;
+};
+
+// The result of a version check, as written to the gateway's request log.
+export const VERSION_CHECK_RESULTS = ["upToDate", "updateAvailable", "updateRequired", "invalidHeaders"] as const;
+export type VersionCheckResult = (typeof VERSION_CHECK_RESULTS)[number];
 
 // --- Content Studio (FR-00003, DD-020) -------------------------------------
 

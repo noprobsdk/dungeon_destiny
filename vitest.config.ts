@@ -3,6 +3,8 @@
 //
 // FR-00001: the gateway Worker's tests run in the Workers runtime with its
 // Wrangler configuration and dev environment.
+// FR-00005: the gateway's version-check tests also run with raised and with
+// invalid thresholds, each in its own project.
 // FR-00003: the studio-api and studio-web Workers' tests run the same way, each
 // with its own configuration; studio-api gets a test SuperAdmin email address.
 // FR-00004: studio-api's tests also get a local Content D1 with every
@@ -30,7 +32,37 @@ export default defineConfig({
             wrangler: { configPath: "./apps/gateway/wrangler.jsonc", environment: "dev" },
           }),
         ],
-        test: { name: "gateway", include: ["tests/FR-00001/**/*.test.ts"], testTimeout: WORKER_TEST_TIMEOUT },
+        test: {
+          name: "gateway",
+          include: ["tests/FR-00001/**/*.test.ts", "tests/FR-00005/*.test.ts"],
+          testTimeout: WORKER_TEST_TIMEOUT,
+        },
+      },
+      {
+        // FR-00005: the gateway with raised Android thresholds (test values
+        // only), to check builds below the recommended and minimum builds.
+        plugins: [
+          cloudflareTest({
+            wrangler: { configPath: "./apps/gateway/wrangler.jsonc", environment: "dev" },
+            miniflare: { bindings: { APP_MIN_BUILD_ANDROID: "2", APP_RECOMMENDED_BUILD_ANDROID: "3" } },
+          }),
+        ],
+        test: { name: "gateway-thresholds", include: ["tests/FR-00005/thresholds/**/*.test.ts"], testTimeout: WORKER_TEST_TIMEOUT },
+      },
+      {
+        // FR-00005: the gateway with invalid thresholds (minimum above
+        // recommended), which it must refuse rather than guess.
+        plugins: [
+          cloudflareTest({
+            wrangler: { configPath: "./apps/gateway/wrangler.jsonc", environment: "dev" },
+            miniflare: { bindings: { APP_MIN_BUILD_ANDROID: "4", APP_RECOMMENDED_BUILD_ANDROID: "3" } },
+          }),
+        ],
+        test: {
+          name: "gateway-misconfigured",
+          include: ["tests/FR-00005/misconfigured/**/*.test.ts"],
+          testTimeout: WORKER_TEST_TIMEOUT,
+        },
       },
       {
         plugins: [
