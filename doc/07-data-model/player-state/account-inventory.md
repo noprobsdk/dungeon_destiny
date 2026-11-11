@@ -35,7 +35,7 @@ Account
 - `equipment` is a published Content Studio definition. It owns Item Level, Rarity, statistics, binding, and usage rules. See [Equipment and hand-slot data model](../character-model/equipment-and-hand-slots.md).
 - Equipment instances and Hero assignments are persistent player state owned by the Player and Hero service and stored in Player D1. See [Service architecture](../../08-technical/service-architecture.md).
 - Clients cannot create, assign, or transfer Equipment instances. Only the authoritative service changes this state.
-- Account and Hero records are referenced by `account_id` and `hero_id`. Their data model is not defined here.
+- Account and Hero records are referenced by `account_id` and `hero_id`. The Account is defined in the [Account data model](account.md); the Hero data model is not defined here.
 
 ## `equipment_instances`
 
@@ -123,7 +123,7 @@ Usage rules are checked only when an assignment is created, including by Transfe
 
 This model does not define:
 
-- Account and Hero records;
+- Hero records;
 - which Weapon Configuration is active and how it is switched;
 - Equipment Slots outside Main Hand and Off Hand;
 - item acquisition, removal, selling, or destruction;

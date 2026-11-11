@@ -62,14 +62,21 @@ secret management is decided.
 
 Player Identity provides:
 
-- player registration or account linking;
+- player registration on the first sign-in, and account linking later;
 - login;
 - secure tokens;
 - account recovery;
 - identity-provider integration;
 - token validation information for the API Gateway.
 
-Players sign in with Google or Apple; no passwords are stored. Player Identity is built into the `gateway` Worker: it verifies the Google or Apple sign-in, maps it to an Account, and issues a short-lived signed access token and a revocable refresh token. Accounts and refresh tokens are stored in Player D1 through the `player` Worker, which owns that database. No outside identity service is used. See [DD-011](../../12-decisions/decision-log.md).
+Players sign in automatically with the platform's game service: Google Play Games on Android and Apple Game Center on iOS. No passwords are stored. Player Identity is built into the `gateway` Worker: it checks the sign-in with Google or Apple, maps it to an Account, and issues a short-lived signed access token and a revocable refresh token. Accounts, sign-ins, and refresh tokens are stored in Player D1 through the `player` Worker, which owns that database. No outside identity service is used. See [DD-011](../../12-decisions/decision-log.md), [DD-024](../../12-decisions/decision-log.md), and the [Account data model](../../07-data-model/player-state/account.md).
+
+- The first sign-in with a provider's player ID creates the Account. Until Accounts can be linked, a player's Android and iOS devices have separate Accounts.
+- If the automatic sign-in fails, the client shows a manual sign-in button and does not ask again by itself. The game does not continue without an Account, and there are no guest Accounts.
+- The access token is a JWT signed with Ed25519, valid for 15 minutes, carrying only `sub` (the `account_id`), `iat`, `exp`, and the key ID `kid`. The API Gateway checks it on every call that needs an Account.
+- The refresh token is valid for 30 days and is replaced on every use. Using a replaced refresh token again revokes its whole chain, except within 30 seconds of the replacement.
+- The token signing key and Google's OAuth client secret are Worker secrets of the `gateway`. See [DD-021](../../12-decisions/decision-log.md).
+- The `gateway` request log may contain the `account_id` of an authenticated call. It is the one personal value allowed in the log.
 
 ## API Gateway
 

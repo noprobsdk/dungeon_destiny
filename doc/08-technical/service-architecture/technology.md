@@ -33,6 +33,16 @@ one state per environment. See [DD-016](../../12-decisions/decision-log.md).
 The Terraform setup, its state bucket, and the onboarding script were delivered
 by [FR-00000](../../../delivery/FR/FR-00000-terraform-setup/README.md).
 
+## Secrets
+
+Worker secrets, such as API tokens and signing keys, are stored only as Worker
+secrets, set by the project owner with `wrangler secret put` for each
+environment, and declared as required in the Worker's Wrangler configuration,
+so that a deploy fails without them. They are never stored in the repository,
+Terraform state, the credential file, or a log. Agents never read, set, or
+print them. Local development and tests use stand-ins, such as test values in
+`.dev.vars`, never real secrets. See [DD-021](../../12-decisions/decision-log.md).
+
 ## Testing
 
 Every Feature Request keeps its tests in `tests/FR-<number>/`. See
@@ -42,7 +52,6 @@ Every Feature Request keeps its tests in `tests/FR-<number>/`. See
 
 - the CI/CD pipeline, including whether GitHub Actions runs checks and
   deployments;
-- deployment tooling for the AWS game-server host;
-- how Worker secrets are stored and set for each environment.
+- deployment tooling for the AWS game-server host.
 
 These are tracked as open decisions in [`doc/todo.md`](../../todo.md).

@@ -1,15 +1,22 @@
 # Database change management
 
-This document defines how Content Studio database schema and reference-data changes are designed, implemented, validated, and released.
+This document defines how schema and reference-data changes to Dungeon Destiny's D1 databases, Content D1 and Player D1, are designed, implemented, validated, and released.
 
-It applies to the Cloudflare D1-compatible SQLite database, Drizzle schema definitions, migrations, seed data, API contracts, and runtime manifests.
+It applies to both Cloudflare D1 databases, their Drizzle schema definitions, migrations, seed data, API contracts, and runtime manifests.
+
+| Database | Holds | Owning Worker | Schema | Migrations |
+|---|---|---|---|---|
+| Content D1 | Content Studio content and staff users | `studio-api` | `apps/studio-api/src/db/schema.ts` | `apps/studio-api/migrations/` |
+| Player D1 | Permanent player data, starting with Accounts | `player` | `apps/player/src/db/schema.ts` | `apps/player/migrations/` |
+
+Only the owning Worker is bound to its database. See [DD-020](../12-decisions/decision-log.md) and [DD-024](../12-decisions/decision-log.md).
 
 ## Sources of truth
 
-The database structure has two connected sources of truth:
+Each database's structure has two connected sources of truth:
 
-1. `apps/studio-api/src/db/schema.ts` defines the current application-level schema with Drizzle ORM (DD-020).
-2. Numbered SQL files under `apps/studio-api/migrations/`, generated with `drizzle-kit` and applied with `wrangler d1 migrations apply`, define the ordered history required to create or upgrade a database.
+1. The owning Worker's `src/db/schema.ts` defines the current application-level schema with Drizzle ORM.
+2. Numbered SQL files under the owning Worker's `migrations/`, generated with `drizzle-kit` and applied with `wrangler d1 migrations apply`, define the ordered history required to create or upgrade a database.
 
 Both must describe the same final structure.
 
@@ -34,8 +41,8 @@ Database changes follow this order:
 1. Describe the proposed change, including From and To structures.
 2. Identify affected tables, relations, API contracts, UI, manifests, and existing records.
 3. Obtain approval before implementation.
-4. Update `apps/studio-api/src/db/schema.ts`.
-5. Generate the next numbered migration under `apps/studio-api/migrations/` with `drizzle-kit`, and review the generated SQL.
+4. Update the owning Worker's `src/db/schema.ts`.
+5. Generate the next numbered migration under the owning Worker's `migrations/` with `drizzle-kit`, and review the generated SQL.
 6. Preserve or explicitly transform existing data.
 7. Update TypeScript types, API queries, validation, and UI consumers.
 8. Apply the migration to a clean local database.
@@ -75,6 +82,7 @@ Application startup and normal API requests must never:
 - drop permanent tables;
 - recreate permanent tables;
 - delete existing Content Studio records;
+- delete player records, except through an approved player operation such as Account deletion;
 - overwrite user-edited content with seed values;
 - silently change the database schema;
 - silently assign compatibility relationships that have not been validated.
@@ -86,6 +94,16 @@ Statements such as the following are prohibited outside an explicit, reviewed mi
 `DROP TABLE IF EXISTS rig_profiles`
 
 Runtime code may check whether required structures exist and fail with a clear schema-version error when the database is not compatible.
+
+## Player D1
+
+Player D1 holds permanent player data. Unlike Content Studio content, it cannot be rebuilt from another source, so these rules apply in addition to the rules above:
+
+- A migration must never delete or rewrite player data unless its data-preservation plan has been approved by the project owner.
+- An export or recoverable backup of Player D1 must exist before any migration other than an additive schema change is applied to a persistent environment.
+- A migration is applied before the `player` code that needs it is deployed.
+- Every row that belongs to an Account refers to `accounts.account_id` and is deleted with the Account. See the [Account data model](../07-data-model/player-state/account.md).
+- Content Studio pages, publication validation, and runtime manifests do not apply to Player D1.
 
 ## Seed and reference-data rules
 

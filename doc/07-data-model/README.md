@@ -20,6 +20,7 @@ Content Studio provides the authoring UI for these records. Technical Architectu
 
 ## Player state
 
+- [Account data model](player-state/account.md)
 - [Account Inventory data model](player-state/account-inventory.md)
 
 ## Asset records
