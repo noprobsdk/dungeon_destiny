@@ -6,7 +6,8 @@ built for Dungeon Destiny and how they are managed.
 Sources: [FR-00000: Terraform setup](../../../FR/FR-00000-terraform-setup/README.md),
 [FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflow/README.md),
 [FR-00003: Worker access policy](../../../FR/FR-00003-worker-access-policy/README.md),
-[FR-00004: Content D1 and user model](../../../FR/FR-00004-content-d1-user-model/README.md).
+[FR-00004: Content D1 and user model](../../../FR/FR-00004-content-d1-user-model/README.md),
+[FR-00005: Godot Android client skeleton](../../../FR/FR-00005-godot-android-client/README.md).
 
 ## Infrastructure management
 
@@ -51,10 +52,17 @@ Worker's service name, such as `gateway`), so the two tools do not undo each
 other. Wrangler uploads the code versions, as described in the [delivery
 pipeline](delivery-pipeline.md).
 
-`dd-dev-gateway` has only the `CF_VERSION_METADATA` binding and the
-`ENVIRONMENT` variable. It has no D1, R2, Durable Object, Queue, or service
-bindings, and no custom domain. Its endpoint is described in
-[Access and edge services](access-and-edge.md).
+`dd-dev-gateway` has only the `CF_VERSION_METADATA` binding. Its variables
+are `ENVIRONMENT` and the app version settings `APP_MIN_BUILD_ANDROID`,
+`APP_RECOMMENDED_BUILD_ANDROID`, and `APP_UPDATE_URL_ANDROID`, set in
+`apps/gateway/wrangler.jsonc`; Terraform does not manage them. It has no D1,
+R2, Durable Object, Queue, or service bindings, and no custom domain. Its
+endpoints are described in [Access and edge services](access-and-edge.md).
+
+Workers Logs is turned on for `dd-dev-gateway`, so its request log is kept and
+can be searched. The setting is declared in Terraform, as `observability` on
+`cloudflare_worker.gateway` in `workers.tf`, and in `wrangler.jsonc`, so
+neither tool undoes the other. The other Workers do not have it.
 
 The Content Studio Workers have these bindings, variables, and secrets.
 Neither has an R2, Durable Object, or Queue binding, or a custom domain.
@@ -158,13 +166,20 @@ FR-00004, accepted on 2026-10-14. Terraform created `dd-dev-content` and the
 Access group and changed the Access policy, and a second `plan` reports no
 changes. Both migrations are applied to `dd-dev-content`.
 
+FR-00005, accepted on 2026-11-10. Terraform turned on Workers Logs for
+`dd-dev-gateway`, changing one resource. After each later `gateway` deploy,
+including the deploys that raised and restored the app version thresholds,
+`plan` reported no changes.
+
 The tests are in `tests/FR-00000/terraform_test.sh`, which applies only when
 `plan` reports no changes, `tests/FR-00001/terraform_worker_test.sh`,
 `tests/FR-00003/terraform_access_test.sh`, and
 `tests/FR-00004/terraform_test.sh`. The FR-00003 test checks that
 Terraform and Wrangler agree on each Worker's address and tags, the Access
 application and policy, the AUD output, that no email address is written in
-the Terraform or Wrangler files, and that `fmt` and `validate` pass. The 8
+the Terraform or Wrangler files, and that `fmt` and `validate` pass.
+`tests/FR-00005/config_test.sh` checks that Workers Logs is turned on in both
+Terraform and `wrangler.jsonc`. The 8
 FR-00004 tests check `dd-dev-content` with EU jurisdiction, the `CONTENT_D1`
 binding on `studio-api` only and the ID output, the Access group, a policy
 that allows only the SuperAdmin and the group, `CF_ACCESS_GROUP_TOKEN` as a

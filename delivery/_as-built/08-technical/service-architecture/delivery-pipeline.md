@@ -1,11 +1,12 @@
 # Delivery pipeline
 
-This page describes how Dungeon Destiny's Workers are built, tested, and
-deployed.
+This page describes how Dungeon Destiny's Workers and Godot game client are
+built, tested, and deployed.
 
 Sources: [FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflow/README.md),
 [FR-00003: Worker access policy](../../../FR/FR-00003-worker-access-policy/README.md),
-[FR-00004: Content D1 and user model](../../../FR/FR-00004-content-d1-user-model/README.md).
+[FR-00004: Content D1 and user model](../../../FR/FR-00004-content-d1-user-model/README.md),
+[FR-00005: Godot Android client skeleton](../../../FR/FR-00005-godot-android-client/README.md).
 
 ## Workspace
 
@@ -19,7 +20,7 @@ Sources: [FR-00001: Worker dev workflow](../../../FR/FR-00001-worker-dev-workflo
 
 | Package | Location | Contents |
 |---|---|---|
-| `@dungeon-destiny/contracts` | `packages/contracts/` | The standard response type, the shared error codes, the permission list, and the Content Studio types and Zod schemas, including `StudioApiRpc` |
+| `@dungeon-destiny/contracts` | `packages/contracts/` | The standard response type, the shared error codes, the permission list, the Content Studio types and Zod schemas, including `StudioApiRpc`, and the app version check types |
 | `@dungeon-destiny/gateway` | `apps/gateway/` | The `gateway` Worker, its Wrangler configuration, generated types, and the `deploy:dev` script |
 | `@dungeon-destiny/studio-api` | `apps/studio-api/` | The `studio-api` Worker, its Wrangler and drizzle-kit configuration, the Content D1 schema and migrations, generated types, and the `deploy:dev` script |
 | `@dungeon-destiny/studio-web` | `apps/studio-web/` | The `studio-web` Worker and the Content Studio pages, its Wrangler and Vite configuration, generated types, and the `build`, `dev`, and `deploy:dev` scripts |
@@ -51,13 +52,15 @@ Content Studio Workers with each package's `types` script.
   tests in the Workers runtime, configured in `vitest.config.ts` with each
   Worker's `dev` environment.
 - `vitest.config.ts` has one Vitest project per Worker, `gateway`,
-  `studio-api`, and `studio-web`, and one project, `studio-ui`, that runs the
-  Content Studio page tests in jsdom with React Testing Library. Each Worker
-  is tested on its own: `studio-api` with a test SuperAdmin email address and
-  a local Content D1 with every migration applied, and `studio-web` with a
-  stand-in `studio-api`. The Workers-runtime projects have a 30-second test
-  timeout, because the first request starts the Worker, which is slow from
-  the repository on a Windows drive.
+  `studio-api`, and `studio-web`; two more `gateway` projects,
+  `gateway-thresholds` and `gateway-misconfigured`, run the version check
+  with raised and with invalid thresholds; and one project, `studio-ui`,
+  runs the Content Studio page tests in jsdom with React Testing Library.
+  Each Worker is tested on its own: `studio-api` with a test SuperAdmin
+  email address and a local Content D1 with every migration applied, and
+  `studio-web` with a stand-in `studio-api`. The Workers-runtime projects
+  have a 30-second test timeout, because the first request starts the
+  Worker, which is slow from the repository on a Windows drive.
 - `pnpm run test:e2e` runs both Content Studio Workers locally as two
   `wrangler dev` processes, connected through Wrangler's local dev registry,
   and tests them in Chromium with Playwright. Tokens come from a local
@@ -70,7 +73,8 @@ Content Studio Workers with each package's `types` script.
   `.test.tsx` and end-to-end tests in `.e2e.ts`. Shell tests are named
   `tests/FR-<number>/*_test.sh`.
 - `pnpm test` runs the Vitest tests and `pnpm run typecheck` checks the types,
-  including the Content Studio pages and the FR-00003 and FR-00004 tests.
+  including the Content Studio pages and the FR-00003, FR-00004, and FR-00005
+  tests.
 - Tests that need Cloudflare access are recorded as blocked when the credential
   file is missing.
 
@@ -105,8 +109,36 @@ deploy, the deployed tests run and `terraform plan` must report no changes.
 The owner checks the one-time PIN sign-in by hand after a deploy that touches
 `studio-web`, Cloudflare Access, or the SuperAdmin.
 
+The `gateway`'s app version thresholds and update link are Wrangler
+variables. To show the update screens, dev is deployed with a changed value
+using `wrangler deploy --var NAME:VALUE`, through `pnpm --filter
+@dungeon-destiny/gateway exec`, then deployed again without `--var` to return
+to the committed values. `pnpm run deploy:dev -- --var …` passes a literal
+`--` to Wrangler, which then ignores the `--var`. Each of these deploys needs
+the owner's approval.
+
 Deployments are manual. There is no deployment automation, such as GitHub
 Actions. The commands are in `AGENTS.md`.
+
+## Game client build
+
+The Godot game client in `apps/game-client/` is built and tested in WSL with
+Godot `4.6.3` and its Android export templates, JDK 17, and the Android SDK
+with platform `android-36` and build tools `36.0.0`, which the onboarding
+script installs.
+
+| Item | Value |
+|---|---|
+| Test framework | GUT `9.6.1`, committed with its licence in `apps/game-client/addons/gut/` |
+| Client tests | `apps/game-client/tests/FR-00005/`, run headless by `tests/FR-00005/client_test.sh` with stubbed HTTP |
+| Screen test | `tests/FR-00005/screens_test.sh` renders every loading-screen state at phone, tall phone, and tablet sizes under Xvfb, saves screenshots in `apps/game-client/build/screens/`, and fails when a text or button lies outside the window |
+| Build | `devops/game-client/build-apk.sh` runs the client tests and exports the "Android (dev)" preset to `apps/game-client/build/dungeon-destiny-dev.apk` |
+| Signing | Godot's default Android debug keystore in `~/.local/share/godot/keystores/`, created by the build script when missing |
+| Install | `devops/game-client/build-apk.sh --install` installs on the one device that `adb devices` lists; because WSL cannot reach USB devices, it uses Windows `adb.exe` |
+| Device bridge | `devops/game-client/device-bridge.sh` runs a fixed set of device requests, such as install, start, screenshot, and tap, for a shell that cannot reach USB, and never passes a request to a shell |
+
+The APK, the keystore, Godot's `.godot/` cache, and `build/` are never
+committed. Release builds, Play Store signing, and iOS are not built yet.
 
 ## Verification
 
@@ -143,3 +175,16 @@ run on the owner's machine against the same files. The clean clone also found
 that `devops/db/query.sh` and its test had been committed without the
 executable bit, because `core.filemode` is off on the Windows drive; commit
 `5d33b5f` fixes that.
+
+FR-00005, accepted on 2026-11-10. `pnpm test` passed 171 tests, 43 of them for
+FR-00005, `pnpm run typecheck` passed, and `pnpm run test:e2e` passed 4. The
+client tests passed 51 headless, and the screen test found no layout
+problems at three sizes. `tests/FR-00005/build_apk_test.sh` passed 17,
+`client_scope_test.sh` 4, `config_test.sh` 3, `device_bridge_test.sh` 6, and
+`logs_tail_test.sh` 8; these use stand-in programs and need no device or
+network. All FR-00000 to FR-00004 tests still pass, and ShellCheck reports no
+findings. The debug APK was built in WSL and installed on an Android tablet
+with Windows `adb.exe`. The first threshold deploy used
+`deploy:dev -- --var` and so redeployed the committed values unchanged; the
+later ones used `exec`. After the last deploy, the deployed tests passed and
+`terraform plan` reported no changes.

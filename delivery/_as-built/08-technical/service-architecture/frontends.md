@@ -1,9 +1,11 @@
 # Frontends
 
-This page describes the frontends that have been built for Dungeon Destiny.
+This page describes the frontends that have been built for Dungeon Destiny:
+Content Studio and the Godot game client.
 
 Sources: [FR-00003: Worker access policy](../../../FR/FR-00003-worker-access-policy/README.md),
-[FR-00004: Content D1 and user model](../../../FR/FR-00004-content-d1-user-model/README.md).
+[FR-00004: Content D1 and user model](../../../FR/FR-00004-content-d1-user-model/README.md),
+[FR-00005: Godot Android client skeleton](../../../FR/FR-00005-godot-android-client/README.md).
 
 ## Content Studio
 
@@ -78,6 +80,51 @@ Back returns to the list without saving.
 Content Studio has no content screens, no page for audit records, and no
 "My account" page.
 
+## Godot game client
+
+The game client is a Godot Android app with one loading screen. It checks its
+build with the `gateway` Worker, tests the connection to the cloud, and shows
+the `gateway` health response. It has no gameplay, sign-in, or game-server
+connection.
+
+| Item | Value |
+|---|---|
+| Code | `apps/game-client/`, a Godot `4.6.3` project |
+| Scene | `scenes/loading_screen.tscn`, with the scripts in `scripts/`: `loading_screen.gd` for the screen, `api_client.gd` and `http_transport.gd` for the calls, `response_parser.gd` for the standard response format, `version_check.gd` for the outcome of each answer, and `app_info.gd` for the version and build |
+| Rendering and layout | Mobile renderer, portrait only, and a 720 × 1280 base viewport that stretches to fit phones and tablets; the UI stays inside the screen's safe area, and buttons are at least 48 dp high |
+| Platform | Android only, `arm64-v8a` only, debug builds only |
+| Package name | `com.dungeondestiny.game.dev` for development builds; `com.dungeondestiny.game` is reserved for the store app |
+| Version | `0.1.0`, build `1`; the build number is defined once in `app_info.gd`, and a test checks that the export preset's version code matches it |
+| `gateway` address | The project setting `dungeon_destiny/gateway_url`, the dev address |
+| Calls | `GET /app/version` and `GET /health` only, each with the headers `X-App-Platform: android` and `X-App-Build`, no token, no personal data, and a 10-second timeout |
+
+When the app opens, it shows the game title and `0.1.0 (build 1)`, then:
+
+1. It calls `GET /app/version`, showing "Checking version…".
+   - Not supported: it shows "Update required" and stops; there is no way to
+     continue.
+   - Supported but not up to date: it shows "A new version is available. You
+     can keep playing and update later." with Continue.
+   - Up to date: it continues.
+2. It calls `GET /health`, showing "Connecting…", and shows the status, the
+   environment, and the deployed server version.
+3. It shows "Ready".
+
+Both update screens have an Update button that opens the link the `gateway`
+returns as `updateUrl`, outside the app. The client opens only `https`
+addresses and hides the button when there is no link. After HTTP 426
+`APP_UPDATE_REQUIRED` on a later call, it shows "Update required" with the
+link from its version check. The link is described in
+[Access and edge services](access-and-edge.md).
+
+When a call fails, times out, or gets an answer that is not in the standard
+format, the app shows "Could not connect to the server. Check your internet
+connection and try again." with Retry, which starts again with the version
+check. When the server answered, the screen also shows its `requestId` in
+small text, so the request can be found in the `gateway` log. The app prints
+each step and each `requestId` to the Godot log, read with
+`adb logcat -s godot:V`.
+
 ## Verification
 
 FR-00003, accepted on 2026-10-10. The page tests run in jsdom with React
@@ -100,3 +147,15 @@ end-to-end test in Chromium has the SuperAdmin create a role and a user, who
 is added to Access and sees only what the role allows; 4 end-to-end tests
 pass. After deployment, the project owner signed in as that second user and
 saw only the pages the role allows.
+
+FR-00005, accepted on 2026-11-10. The client tests run headless with GUT
+`9.6.1` and stubbed HTTP, and 51 pass. They cover each answer leading to the
+right screen, the app headers on every call, HTTP 426 on any call, the Update
+button shown only with an `https` link and opening exactly that link, Retry,
+the `requestId` on the connection error screen, the safe area, button heights,
+and the project settings and export preset. A screen test renders every state
+at phone, tall phone, and tablet sizes and finds no text or button outside the
+window. On a Samsung Android tablet, which the project owner accepted in place
+of a phone, the app showed Ready; offline it showed the connection error, and
+Retry reached Ready once back online; with raised thresholds deployed to dev,
+it showed both update screens, and Update opened Google Play.

@@ -2,6 +2,21 @@
 
 Approved changes to this Feature Request, newest first.
 
+## 2026-11-11: Documentation complete
+
+- **Change:** Published FR-00005 in `delivery/_as-built/`: the game client in
+  `08-technical/service-architecture/frontends.md`, the `gateway` version
+  check, update link, and request log in `access-and-edge.md`, Workers Logs
+  and the app version variables in `deployment-model.md`, the client build
+  and tests in `delivery-pipeline.md`, and the toolchain checks in
+  `08-technical/developer-onboarding.md`. Moved the status to `Complete`.
+- **Reason:** Implementation, verification, and as-built documentation are
+  complete, and no decision is unresolved.
+- **Affected files:** `README.md`, `CHANGELOG.md`; the Feature Request list in
+  `delivery/README.md`; the as-built pages above with
+  `delivery/_as-built/README.md` and `CHANGELOG.md`.
+- **Verification:** All files match their approved proposals.
+
 ## 2026-11-10: Accepted, moved to Pending documentation
 
 - **Change:** The project owner accepted the implementation against the

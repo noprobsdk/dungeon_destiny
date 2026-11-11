@@ -1,14 +1,15 @@
 # Developer onboarding
 
 This page describes the onboarding script that checks whether a machine can
-run Dungeon Destiny's infrastructure tooling and build and test the Workers,
-and helps fix what is missing.
+run Dungeon Destiny's infrastructure tooling, build and test the Workers, and
+build the Godot game client, and helps fix what is missing.
 
 Sources: [FR-00000: Terraform setup](../../FR/FR-00000-terraform-setup/README.md),
 [FR-00001: Worker dev workflow](../../FR/FR-00001-worker-dev-workflow/README.md),
 [FR-00002: GitHub CLI onboarding](../../FR/FR-00002-github-cli-onboarding/README.md),
 [FR-00003: Worker access policy](../../FR/FR-00003-worker-access-policy/README.md),
-[FR-00004: Content D1 and user model](../../FR/FR-00004-content-d1-user-model/README.md).
+[FR-00004: Content D1 and user model](../../FR/FR-00004-content-d1-user-model/README.md),
+[FR-00005: Godot Android client skeleton](../../FR/FR-00005-godot-android-client/README.md).
 
 ## Script
 
@@ -30,6 +31,10 @@ Every check runs and is reported as passed, failed, or skipped:
 - Node.js 24.x and the pnpm version pinned in `package.json` are installed,
   and the project dependencies are installed;
 - Playwright's Chromium, used by the end-to-end tests, is installed;
+- for the game client: Godot `4.6.3`, linked as `~/.local/bin/godot` (or
+  given by `$GODOT`), Godot's Android export templates for `4.6.3`, JDK 17,
+  and the Android SDK in `~/Android/Sdk` (or `$ANDROID_HOME`) with
+  platform-tools, `android-36`, and build tools `36.0.0` are installed;
 - the credential file exists and only its owner can read it;
 - the credential file sets `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_KEY`,
   `CLOUDFLARE_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and
@@ -77,6 +82,16 @@ storing, and rotating it is step 13 of `doc/howto-cloudflare-setup.md`.
   folder. Turning on Zero Trust is a manual step in the Cloudflare dashboard,
   on the free plan with a team name: the script explains it, asks whether it
   is done, checks again, and changes nothing in Cloudflare.
+
+  Godot, about 72 MB, and its export templates, about 1.26 GB, are
+  downloaded from Godot's GitHub releases and checked against the release's
+  SHA-512 checksums, then installed in the owner's home folder without
+  `sudo`; only the Android templates are kept. JDK 17 is installed with the
+  `openjdk-17-jdk-headless` package. The Android SDK is installed with
+  Google's `sdkmanager`, from Ubuntu's
+  `google-android-cmdline-tools-13.0-installer` package, which shows Google's
+  licence for the owner to accept; Ubuntu 24.04 has no `sdkmanager` package
+  of its own.
 - **Check only**, with `--check` or without a terminal: the script only reads,
   never prompts, and changes nothing.
 
@@ -119,6 +134,12 @@ verification, and the credential file and the R2 token were recreated; then
 `devops/onboarding.sh` reported 21 passed. The onboarding tests now clear any
 real credential variables before they run, and they still pass, also from a
 clean clone of commit `5d33b5f`.
+
+FR-00005, accepted on 2026-11-10. On the owner's machine,
+`devops/onboarding.sh` installed the game-client toolchain and reported 25
+passed. The 6 tests in `tests/FR-00005/onboarding_client_test.sh` pass. The
+FR-00000 to FR-00003 onboarding tests give the script a stand-in game-client
+toolchain and still pass.
 
 The tests use stand-in programs and temporary credential files, so they need
 no network, no real credentials, and no GitHub account.

@@ -2,6 +2,28 @@
 
 Published changes to the as-built documentation, newest first.
 
+## 2026-11-11: FR-00005 published
+
+- **Change:** Published FR-00005. Added the Godot game client, with its
+  loading, update, and connection error screens and the Update button, to
+  `frontends.md`; `GET /app/version`, the build check, the update link, the
+  request log, and the error codes `INVALID_APP_HEADERS`,
+  `APP_UPDATE_REQUIRED`, and `SERVER_MISCONFIGURED` to `access-and-edge.md`;
+  the `gateway`'s app version variables and Workers Logs to
+  `deployment-model.md`; the threshold deploys, the extra `gateway` test
+  projects, and the game client's tests and APK build to
+  `delivery-pipeline.md`; and the game-client toolchain checks to
+  `developer-onboarding.md`.
+- **Source:** [FR-00005: Godot Android client skeleton](../FR/FR-00005-godot-android-client/README.md),
+  its `CHANGELOG.md`, which records the Update button as an approved
+  deviation, and its `implementation_report.md`.
+- **Affected files:** `README.md`, `CHANGELOG.md`,
+  `08-technical/service-architecture/frontends.md`,
+  `08-technical/service-architecture/access-and-edge.md`,
+  `08-technical/service-architecture/deployment-model.md`,
+  `08-technical/service-architecture/delivery-pipeline.md`,
+  `08-technical/developer-onboarding.md`.
+
 ## 2026-10-20: FR-00004 published
 
 - **Change:** Published FR-00004. Created
