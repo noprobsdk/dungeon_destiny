@@ -1,6 +1,6 @@
 # FR-00006: Play Games sign-in
 
-- **Status:** In Specification
+- **Status:** In Progress
 - **Sprint:** Not used. The project has one developer, so sprints are not used.
 - **Type:** Implementation
 - **Tracking:** [GitHub Issue #7](https://github.com/noprobsdk/dungeon_destiny/issues/7)
@@ -107,8 +107,7 @@ linking, Account deletion and data retention, and Heroes.
   version check, request log, Godot client, and APK build.
 - [`doc/test-driven-development.md`](../../../doc/test-driven-development.md).
 
-Design baseline commit: the commit that adds DD-024 and the Account data
-model.
+Design baseline commit: `3c59f92`.
 
 Source-document readiness gate: passes for this scope. DD-024 and the Account
 data model define the Account, the sign-ins, and the tokens. The open
@@ -185,7 +184,8 @@ Blockers: none.
   `crypto.getRandomValues`, valid for 30 days, replaced on every use, and
   stored only as its SHA-256 hash.
 - Using a replaced refresh token within 30 seconds of its replacement is a
-  retry and gets the same next token; using it later revokes its whole chain.
+  retry: the token issued for it is revoked and a new next token is issued,
+  because only hashes are stored. Using it later revokes its whole chain.
 - The lifetimes are constants in the `gateway` code.
 - On every start, the client uses its stored refresh token. If it is missing
   or refused, the client signs in with Play Games again.

@@ -10,6 +10,11 @@
 // FR-00004: studio-api's tests also get a local Content D1 with every
 // migration applied, and test values for the Access group sync.
 // Content Studio's React pages run in jsdom.
+// FR-00006: the player Worker's tests run with a local Player D1 with every
+// migration applied. The gateway's Player Identity tests run in their own
+// project with a local Player D1 for the real Account operations, called in
+// place of the PLAYER binding. Every gateway project gets a stand-in
+// dd-dev-player service, because the PLAYER binding needs one to start.
 import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
@@ -18,10 +23,23 @@ import { defineConfig } from "vitest/config";
 // every studio-api test.
 const contentMigrations = await readD1Migrations("./apps/studio-api/migrations");
 
+// FR-00006: Player D1's migrations, applied to an empty local database before
+// every player test.
+const playerMigrations = await readD1Migrations("./apps/player/migrations");
+
 // FR-00004: the first request in a Workers-runtime project starts the Worker,
 // which can take longer than Vitest's 5-second default when the repository is
 // on a Windows drive under WSL. The tests themselves stay fast.
 const WORKER_TEST_TIMEOUT = 30_000;
+
+// FR-00006: the PLAYER service binding of the gateway needs a service of that
+// name to start the runtime. The Player Identity tests pass their own PLAYER.
+const playerStandIn = {
+  name: "dd-dev-player",
+  modules: true,
+  compatibilityDate: "2026-10-07",
+  script: "export default { fetch() { return new Response(null, { status: 404 }); } };",
+};
 
 export default defineConfig({
   test: {
@@ -30,6 +48,7 @@ export default defineConfig({
         plugins: [
           cloudflareTest({
             wrangler: { configPath: "./apps/gateway/wrangler.jsonc", environment: "dev" },
+            miniflare: { workers: [playerStandIn] },
           }),
         ],
         test: {
@@ -44,7 +63,7 @@ export default defineConfig({
         plugins: [
           cloudflareTest({
             wrangler: { configPath: "./apps/gateway/wrangler.jsonc", environment: "dev" },
-            miniflare: { bindings: { APP_MIN_BUILD_ANDROID: "2", APP_RECOMMENDED_BUILD_ANDROID: "3" } },
+            miniflare: { bindings: { APP_MIN_BUILD_ANDROID: "2", APP_RECOMMENDED_BUILD_ANDROID: "3" }, workers: [playerStandIn] },
           }),
         ],
         test: { name: "gateway-thresholds", include: ["tests/FR-00005/thresholds/**/*.test.ts"], testTimeout: WORKER_TEST_TIMEOUT },
@@ -55,12 +74,32 @@ export default defineConfig({
         plugins: [
           cloudflareTest({
             wrangler: { configPath: "./apps/gateway/wrangler.jsonc", environment: "dev" },
-            miniflare: { bindings: { APP_MIN_BUILD_ANDROID: "4", APP_RECOMMENDED_BUILD_ANDROID: "3" } },
+            miniflare: { bindings: { APP_MIN_BUILD_ANDROID: "4", APP_RECOMMENDED_BUILD_ANDROID: "3" }, workers: [playerStandIn] },
           }),
         ],
         test: {
           name: "gateway-misconfigured",
           include: ["tests/FR-00005/misconfigured/**/*.test.ts"],
+          testTimeout: WORKER_TEST_TIMEOUT,
+        },
+      },
+      {
+        // FR-00006: Player Identity in the gateway, with a local Player D1 for
+        // the real Account operations. The tests generate the signing key and
+        // pass it with the other secrets in a test environment (DD-021).
+        plugins: [
+          cloudflareTest({
+            wrangler: { configPath: "./apps/gateway/wrangler.jsonc", environment: "dev" },
+            miniflare: {
+              workers: [playerStandIn],
+              d1Databases: ["TEST_PLAYER_D1"],
+              bindings: { TEST_PLAYER_MIGRATIONS: playerMigrations },
+            },
+          }),
+        ],
+        test: {
+          name: "gateway-identity",
+          include: ["tests/FR-00006/gateway/**/*.test.ts"],
           testTimeout: WORKER_TEST_TIMEOUT,
         },
       },
@@ -109,6 +148,19 @@ export default defineConfig({
         test: {
           name: "studio-web",
           include: ["tests/FR-00003/web/**/*.test.ts", "tests/FR-00004/web/**/*.test.ts"],
+          testTimeout: WORKER_TEST_TIMEOUT,
+        },
+      },
+      {
+        plugins: [
+          cloudflareTest({
+            wrangler: { configPath: "./apps/player/wrangler.jsonc", environment: "dev" },
+            miniflare: { bindings: { TEST_MIGRATIONS: playerMigrations } },
+          }),
+        ],
+        test: {
+          name: "player",
+          include: ["tests/FR-00006/player/**/*.test.ts"],
           testTimeout: WORKER_TEST_TIMEOUT,
         },
       },

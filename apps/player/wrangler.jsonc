@@ -1,0 +1,37 @@
+// FR-00006: the player Worker (DD-017, DD-024). Terraform creates the Worker
+// without a workers.dev address; it is reached only through the service
+// binding from gateway. Wrangler uploads its code versions.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "player",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-07",
+  "env": {
+    "dev": {
+      "name": "dd-dev-player",
+      // Must match Terraform: subdomain.enabled = false, previews_enabled = false.
+      "workers_dev": false,
+      "preview_urls": false,
+      "vars": {
+        "ENVIRONMENT": "dev"
+      },
+      // Player D1, bound only to player (DD-017). The database ID is not a
+      // secret; it comes from Terraform's output after the database is
+      // created. Until then this placeholder works only for local tests.
+      "d1_databases": [
+        {
+          "binding": "PLAYER_D1",
+          "database_name": "dd-dev-player",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "observability": {
+        "enabled": true
+      },
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      }
+    }
+  }
+}

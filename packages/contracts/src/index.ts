@@ -42,6 +42,22 @@ export const ERROR_CODES = {
   // FR-00005: the Worker's own configuration is invalid, so it refuses to
   // answer rather than guess.
   SERVER_MISCONFIGURED: "SERVER_MISCONFIGURED",
+  // FR-00006: the body is missing, not JSON, or has a wrong or unknown field
+  // or provider. Sent with HTTP 400.
+  INVALID_REQUEST: "INVALID_REQUEST",
+  // FR-00006: Google refused the server auth code. Sent with HTTP 401.
+  SIGN_IN_FAILED: "SIGN_IN_FAILED",
+  // FR-00006: the refresh token is unknown, expired, replaced, or revoked.
+  // Sent with HTTP 401.
+  INVALID_REFRESH_TOKEN: "INVALID_REFRESH_TOKEN",
+  // FR-00006: a call that needs an Account has no valid access token. Sent
+  // with HTTP 401.
+  AUTH_REQUIRED: "AUTH_REQUIRED",
+  // FR-00006: the access token has expired. Sent with HTTP 401.
+  AUTH_EXPIRED: "AUTH_EXPIRED",
+  // FR-00006: Google cannot be reached or answered with an error. Sent with
+  // HTTP 503.
+  SIGN_IN_UNAVAILABLE: "SIGN_IN_UNAVAILABLE",
 } as const;
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
@@ -125,4 +141,5 @@ export interface StudioApiRpc {
 }
 
 export * from "./permissions";
+export * from "./player";
 export * from "./studio";

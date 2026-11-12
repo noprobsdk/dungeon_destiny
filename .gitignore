@@ -13,6 +13,9 @@ Desktop.ini
 .env
 .env.*
 !.env.example
+# FR-00006: Wrangler's local secrets (DD-021)
+.dev.vars
+.dev.vars.*
 
 # JavaScript / TypeScript
 node_modules/

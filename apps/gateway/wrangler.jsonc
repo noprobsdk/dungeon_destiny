@@ -21,8 +21,26 @@
         // FR-00005: where the app's Update button leads; https only. Dev has
         // no store page yet, so this proves the button and shows Play's
         // "not found" page until one exists.
-        "APP_UPDATE_URL_ANDROID": "https://play.google.com/store/apps/details?id=com.dungeondestiny.game.dev"
+        "APP_UPDATE_URL_ANDROID": "https://play.google.com/store/apps/details?id=com.dungeondestiny.game.dev",
+        // FR-00006: Player Identity (DD-024). The web OAuth client ID from the
+        // Play Console is not a secret; until the project owner creates it,
+        // sign-in answers SERVER_MISCONFIGURED. The key ID names the signing
+        // key in every access token; change it when the key is replaced.
+        "GOOGLE_OAUTH_CLIENT_ID": "",
+        "ACCESS_TOKEN_KEY_ID": "dev-1"
       },
+      // FR-00006 (DD-021): the Ed25519 private key that signs access tokens,
+      // as a JWK, and the web OAuth client's secret. The project owner stores
+      // them with `wrangler secret put`; agents never read, set, or print
+      // them. A deploy fails without them.
+      "secrets": {
+        "required": ["ACCESS_TOKEN_SIGNING_KEY", "GOOGLE_OAUTH_CLIENT_SECRET"]
+      },
+      // FR-00006: the player Worker, which owns Player D1, called only
+      // through this binding with typed RPC.
+      "services": [
+        { "binding": "PLAYER", "service": "dd-dev-player" }
+      ],
       // FR-00005: Workers Logs. Terraform declares the same setting in
       // infra/terraform/envs/dev/workers.tf, so neither undoes the other.
       "observability": {

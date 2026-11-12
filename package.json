@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p packages/contracts && tsc -p apps/gateway && tsc -p tests/FR-00001 && tsc -p tests/FR-00005 && tsc -p apps/studio-api && tsc -p apps/studio-web && tsc -p apps/studio-web/tsconfig.app.json && tsc -p tests/FR-00003/api && tsc -p tests/FR-00003/web && tsc -p tests/FR-00003/ui && tsc -p tests/FR-00003/e2e && tsc -p tests/FR-00004/api && tsc -p tests/FR-00004/web && tsc -p tests/FR-00004/ui",
+    "typecheck": "tsc -p packages/contracts && tsc -p apps/gateway && tsc -p tests/FR-00001 && tsc -p tests/FR-00005 && tsc -p apps/studio-api && tsc -p apps/studio-web && tsc -p apps/studio-web/tsconfig.app.json && tsc -p tests/FR-00003/api && tsc -p tests/FR-00003/web && tsc -p tests/FR-00003/ui && tsc -p tests/FR-00003/e2e && tsc -p tests/FR-00004/api && tsc -p tests/FR-00004/web && tsc -p tests/FR-00004/ui && tsc -p apps/player && tsc -p tests/FR-00006/player && tsc -p tests/FR-00006/gateway",
     "test:e2e": "playwright test -c tests/FR-00003/e2e/playwright.config.ts"
   },
   "devDependencies": {
